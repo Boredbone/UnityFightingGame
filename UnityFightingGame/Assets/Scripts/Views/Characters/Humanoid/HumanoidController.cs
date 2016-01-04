@@ -14,7 +14,7 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
         public Component targetObject;
         
         private float speed = 6f;
-        private float jumpspeed = 8f;
+        private float jumpspeed = 10f;
         private float accelTime = 0.5f;
         
         private CharacterController Controller { get; set; }
@@ -220,11 +220,6 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
         public void Update()
         {
 
-            // 参照用のステート変数にBase Layer (0)の現在のステートを設定する
-            var currentBaseState = this.Animator.GetCurrentAnimatorStateInfo(0);
-
-            this.AnimatorStates.CheckAll(currentBaseState.fullPathHash);
-            this.AnimatorStates.IsInTransition = this.Animator.IsInTransition(0);
             
 
 
@@ -234,6 +229,15 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
             var vlc = v * 0.3f + h;
 
 
+
+
+
+
+            // 参照用のステート変数にBase Layer (0)の現在のステートを設定する
+            var currentBaseState = this.Animator.GetCurrentAnimatorStateInfo(0);
+
+            this.AnimatorStates.CheckAll(currentBaseState.fullPathHash);
+            this.AnimatorStates.IsInTransition = this.Animator.IsInTransition(0);
 
 
             if (this.AnimatorStates.IsNotInTransition
@@ -253,9 +257,10 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
 
 
 
+            var desiredHorizontalVelocity = this.Velocity.z;
+            var desiredVerticalVelocity = this.Velocity.y;
 
-
-            var desiredVelocity = this.Velocity;
+            //var desiredVelocity = this.Velocity;
             var isGrounded = this.Controller.isGrounded;
 
             // Change Direction
@@ -263,7 +268,7 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
             {
                 transform.Rotate(new Vector3(0, 1, 0), 180);
                 this.moveDirection *= -1f;
-                desiredVelocity.z *= -1f;
+                desiredHorizontalVelocity *= -1f;
             }
 
             vlc *= this.moveDirection;
@@ -293,12 +298,15 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
 
                 if (this.AnimatorStates.ActiveStates.Any(y => y.Tags.Contains(inAttackTag)))
                 {
-                    desiredVelocity.z *= 0.9f;
+                    desiredHorizontalVelocity *= 0.9f;
                 }
                 else
                 {
-                    desiredVelocity = new Vector3(0, 0, setVlc) * speed; //new Vector3(h, 0, v);//
+                    //desiredVelocity = new Vector3(0, 0, setVlc) * speed; //new Vector3(h, 0, v);//
+                    desiredHorizontalVelocity = setVlc * speed;
                 }
+
+                desiredVerticalVelocity = 0f;
 
                 //if (Input.GetKeyDown(KeyCode.DownArrow))
                 //{
@@ -334,22 +342,23 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
 
                         //var vlc = h * 0.3f + v;
 
-                        var vd = new Vector3(0, 0, vlc) * speed;
+                        var vd = vlc * speed;
 
-                        if (desiredVelocity.z * vd.z < 0.0001)
+                        if (desiredHorizontalVelocity * vd < 0.0001)
                         {
-                            desiredVelocity = vd;
+                            desiredHorizontalVelocity = vd;
+
                         }
-                        else if (desiredVelocity.z * vd.z > 0.0001)
+                        else if (desiredHorizontalVelocity * vd > 0.0001)
                         {
-                            desiredVelocity += vd * 0.3f;
+                            desiredHorizontalVelocity += vd * 0.3f;
                         }
                         else
                         {
-                            desiredVelocity += vd;
+                            desiredHorizontalVelocity += vd;
                         }
 
-                        desiredVelocity.y = jumpspeed;// * 0.8f;
+                        desiredVerticalVelocity = jumpspeed;// * 0.8f;
 
                         this.Jmp2State.Request(this.Animator);
                         this.LandState.Request(this.Animator, false);
@@ -376,7 +385,7 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
                 {
                     this.isInAttack = true;
                     this.Animator.SetBool("Attack1", true);
-                    desiredVelocity.y += jumpspeed * 0.2f;
+                    desiredVerticalVelocity += jumpspeed * 0.2f;
                 }
                 else if (Input.GetKeyDown(KeyCode.C))
                 {
@@ -411,24 +420,24 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
             // Jump
             if (this.JumpState.IsActive && this.JumpRequest && this.JumpStartTrigger)
             {
-                desiredVelocity.y = jumpspeed;
+                desiredVerticalVelocity = jumpspeed;
                 this.JumpRequest = false;
             }
 
             // Gravity
             if (!isInAttack)
             {
-                desiredVelocity.y -= 20f * Time.deltaTime;
+                desiredVerticalVelocity -= 20f * Time.deltaTime;
             }
             else
             {
-                if (desiredVelocity.y > 0)
+                if (desiredVerticalVelocity > 0)
                 {
-                    desiredVelocity.y -= 10f * Time.deltaTime;
+                    desiredVerticalVelocity -= 10f * Time.deltaTime;
                 }
                 else
                 {
-                    desiredVelocity.y -= 5f * Time.deltaTime;
+                    desiredVerticalVelocity -= 5f * Time.deltaTime;
                 }
             }
 
@@ -436,7 +445,7 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
             var jumping = this.JumpState.IsActive || this.Jmp2State.IsActive;
             var stability = jumping ? this.Animator.GetFloat("JumpStability") : 0f;
 
-            if ((desiredVelocity.y < -jumpspeed * 0.6f && jumping)
+            if ((desiredVerticalVelocity < -jumpspeed * 0.6f && jumping)
                 || (jumping && isGrounded && (stability > 0.8)))
                // || (Math.Abs(desiredVelocity.y) > 0.1 && desiredVelocity.y < this.jumpspeed * 0.5))))
                 //!this.JumpRequest))// // || (!jumping && !isIdle && cc.isGrounded))
@@ -463,10 +472,13 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
 
             //desiredVelocity.z = 0f;
 
-            this.Velocity = desiredVelocity;
+            //desiredVelocity.y = desiredVerticalVelocity;
+            //desiredVelocity.z = desiredHorizontalVelocity;
+
+            this.Velocity = new Vector3(0, desiredVerticalVelocity, desiredHorizontalVelocity);// desiredVelocity;
 
             // Move character
-            this.Controller.Move(transform.TransformDirection(desiredVelocity) * Time.deltaTime);
+            this.Controller.Move(transform.TransformDirection(this.Velocity) * Time.deltaTime);
 
             // Clear animator triggers
             this.AnimatorStates.ClearTriggers(this.Animator);
