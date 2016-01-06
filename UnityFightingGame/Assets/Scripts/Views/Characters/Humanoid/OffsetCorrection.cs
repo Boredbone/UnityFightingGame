@@ -10,7 +10,7 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
 
     public class OffsetCorrection : MonoBehaviour
     {
-        public Component targetObject;
+        public Component TargetObject { get; set; }
 
         private Animator Animator { get; set; }
         private CharacterController Controller { get; set; }
@@ -24,8 +24,8 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
         public void Start()
         {
             this.Controller = gameObject.GetComponent<CharacterController>();
-            this.Animator = this.targetObject.GetComponent<Animator>();
-            this.originalTargetCenter = targetObject.transform.position - this.transform.position;
+            //this.Animator = this.TargetObject.GetComponent<Animator>();
+            //this.originalTargetCenter = TargetObject.transform.position - this.transform.position;
         }
 
         /// <summary>
@@ -33,10 +33,18 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
         /// </summary>
         public void Update()
         {
+
+            if(this.Animator==null && this.TargetObject != null)
+            {
+                this.Animator = this.TargetObject.GetComponent<Animator>();
+                this.originalTargetCenter = TargetObject.transform.position - this.transform.position;
+            }
+
+
             //if (!this.Controller.isGrounded)
             //{
             var jumpHeight = this.Animator.GetFloat("JumpHeight");
-            this.targetObject.transform.position = this.transform.position + this.originalTargetCenter
+            this.TargetObject.transform.position = this.transform.position + this.originalTargetCenter
                 - new Vector3(0, jumpHeight, 0);
             //}
             //else

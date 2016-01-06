@@ -15,7 +15,8 @@ namespace Boredbone.GameScripts.Helpers
         public bool IsNotInTransition { get { return !this.IsInTransition; } }
 
 
-        public AnimatorState[] ActiveStates { get { return this.States.Where(y => y.IsActive).ToArray(); } }
+        private AnimatorState[] ActiveStates { get; set; }
+        // { get { return this.States.Where(y => y.IsActive).ToArray(); } }
 
         public AnimatorStateManager()
         {
@@ -34,24 +35,30 @@ namespace Boredbone.GameScripts.Helpers
             {
                 item.Check(current);
             }
+            this.ActiveStates = this.States.Where(y => y.IsActive).ToArray();
         }
 
-        public void ClearTriggers(Animator animator)
+        public bool HasTag(string tag)
         {
-            if (this.IsInTransition)
-            {
-                return;
-            }
-
-            foreach (var item in this.States)
-            {
-                if (item.IsAutoTriggerClear && item.IsActive && item.Trigger != null)
-                {
-                    animator.SetBool(item.Trigger, false);
-                }
-            }
-
-
+            return this.ActiveStates.Any(y => y.Tags.Contains(tag));
         }
+
+        //public void ClearTriggers(Animator animator)
+        //{
+        //    if (this.IsInTransition)
+        //    {
+        //        return;
+        //    }
+        //
+        //    foreach (var item in this.States)
+        //    {
+        //        if (item.IsAutoTriggerClear && item.IsActive && item.Trigger != null)
+        //        {
+        //            animator.SetBool(item.Trigger, false);
+        //        }
+        //    }
+        //
+        //
+        //}
     }
 }

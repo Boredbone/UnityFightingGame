@@ -5,13 +5,15 @@ using System.Linq;
 using Boredbone.Utility.Extensions;
 using Boredbone.GameScripts.Helpers;
 using System;
+using Boredbone.GameScripts.Extensions;
 
 namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
 {
+   
 
     public class HumanoidController : MonoBehaviour
     {
-        public Component targetObject;
+        private Component targetObject;
         
         private float speed = 6f;
         private float jumpspeed = 10f;
@@ -25,6 +27,11 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
 
         private AnimatorStateManager AnimatorStates { get; set; }
 
+        private AnimationTrigger JumpTrigger { get; set; }
+        private AnimationTrigger SecondJumpTrigger { get; set; }
+        private AnimationTrigger LandingTrigger { get; set; }
+        private AnimationTrigger RestTrigger { get; set; }
+
         private AnimatorState IdleState { get; set; }
         private AnimatorState LocoState { get; set; }
         private AnimatorState JumpState { get; set; }
@@ -33,22 +40,22 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
         private AnimatorState Lan2State { get; set; }
         private AnimatorState RestState { get; set; }
 
-        private AnimatorState AirAttack1State { get; set; }
-        private AnimatorState AirAttack2_0State { get; set; }
-        private AnimatorState AirAttack2_1State { get; set; }
-        private AnimatorState AirAttack2_2State { get; set; }
-
-        private AnimatorState LandAttack1State { get; set; }
-        private AnimatorState LandAttack2_0State { get; set; }
-        private AnimatorState LandAttack2_1State { get; set; }
-        private AnimatorState LandAttack2_2State { get; set; }
-
-        private AnimatorState DamagedGround1State { get; set; }
-        private AnimatorState DamagedGround2State { get; set; }
-        private AnimatorState DamagedGround3State { get; set; }
-        private AnimatorState DamagedAir1State { get; set; }
-        private AnimatorState DamagedAir2State { get; set; }
-        private AnimatorState DamagedAir3State { get; set; }
+        //private AnimatorState AirAttack1State { get; set; }
+        //private AnimatorState AirAttack2_0State { get; set; }
+        //private AnimatorState AirAttack2_1State { get; set; }
+        //private AnimatorState AirAttack2_2State { get; set; }
+        //
+        //private AnimatorState LandAttack1State { get; set; }
+        //private AnimatorState LandAttack2_0State { get; set; }
+        //private AnimatorState LandAttack2_1State { get; set; }
+        //private AnimatorState LandAttack2_2State { get; set; }
+        //
+        //private AnimatorState DamagedGround1State { get; set; }
+        //private AnimatorState DamagedGround2State { get; set; }
+        //private AnimatorState DamagedGround3State { get; set; }
+        //private AnimatorState DamagedAir1State { get; set; }
+        //private AnimatorState DamagedAir2State { get; set; }
+        //private AnimatorState DamagedAir3State { get; set; }
 
         
 
@@ -90,6 +97,25 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
         /// </summary>
         public void Start()
         {
+
+            var children = this.transform.AsEnumerable().Where(y => y.tag.Equals("HumanoidModel")).ToArray();
+
+            var index = 1;//this.Presenter.ColorIndex;
+
+            for (int i = 0; i < children.Length; i++)
+            {
+                children[i].gameObject.SetActive(i == index);
+            }
+
+            this.targetObject = children[index];
+
+
+            var offsetCorrection = this.GetComponent<OffsetCorrection>();
+            if (offsetCorrection != null)
+            {
+                offsetCorrection.TargetObject = this.targetObject;
+            }
+
             this.Controller = gameObject.GetComponent<CharacterController>();
             this.Animator = this.targetObject.GetComponent<Animator>();
 
@@ -111,32 +137,37 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
 
             this.AnimatorStates = new AnimatorStateManager();
 
-
-            this.IdleState = new AnimatorState("Base Layer.Idle", null, this.AnimatorStates);
-            this.LocoState = new AnimatorState("Base Layer.Locomotion", null, this.AnimatorStates);
-            this.JumpState = new AnimatorState("Base Layer.Jump", "Jump", this.AnimatorStates);
-            this.Jmp2State = new AnimatorState("Base Layer.SecondJump", "SecondJump", this.AnimatorStates);
-            this.LandState = new AnimatorState("Base Layer.Landing", "Landing", this.AnimatorStates);
-            this.Lan2State = new AnimatorState("Base Layer.Landed", null, this.AnimatorStates);
-            this.RestState = new AnimatorState("Base Layer.Rest", "Rest", this.AnimatorStates);
+            this.JumpTrigger = new AnimationTrigger("Jump", this.Animator);
+            this.SecondJumpTrigger = new AnimationTrigger("SecondJump", this.Animator);
+            this.LandingTrigger = new AnimationTrigger("Landing", this.Animator);
+            this.RestTrigger = new AnimationTrigger("Rest", this.Animator);
 
 
-            this.AirAttack1State = new AnimatorState("Base Layer.AirAtk1", null, this.AnimatorStates);
-            this.AirAttack2_0State = new AnimatorState("Base Layer.AirAtk2_0", null, this.AnimatorStates);
-            this.AirAttack2_1State = new AnimatorState("Base Layer.AirAtk2_1", null, this.AnimatorStates);
-            this.AirAttack2_2State = new AnimatorState("Base Layer.AirAtk2_2", null, this.AnimatorStates);
-            this.LandAttack1State = new AnimatorState("Base Layer.LandAtk1", null, this.AnimatorStates);
-            this.LandAttack2_0State = new AnimatorState("Base Layer.LandAtk2_0", null, this.AnimatorStates);
-            this.LandAttack2_1State = new AnimatorState("Base Layer.LandAtk2_1", null, this.AnimatorStates);
-            this.LandAttack2_2State = new AnimatorState("Base Layer.LandAtk2_2", null, this.AnimatorStates);
+            this.IdleState = new AnimatorState("Base Layer.Idle", this.AnimatorStates);
+            this.LocoState = new AnimatorState("Base Layer.Locomotion", this.AnimatorStates);
+            this.JumpState = new AnimatorState("Base Layer.Jump", this.AnimatorStates);
+            this.Jmp2State = new AnimatorState("Base Layer.SecondJump", this.AnimatorStates);
+            this.LandState = new AnimatorState("Base Layer.Landing", this.AnimatorStates);
+            this.Lan2State = new AnimatorState("Base Layer.Landed", this.AnimatorStates);
+            this.RestState = new AnimatorState("Base Layer.Rest", this.AnimatorStates);
 
 
-            this.DamagedGround1State = new AnimatorState("Base Layer.DamagedGround1", null, this.AnimatorStates);
-            this.DamagedGround2State = new AnimatorState("Base Layer.DamagedGround2", null, this.AnimatorStates);
-            this.DamagedGround3State = new AnimatorState("Base Layer.DamagedGround3", null, this.AnimatorStates);
-            this.DamagedAir1State = new AnimatorState("Base Layer.DamagedAir1", null, this.AnimatorStates);
-            this.DamagedAir2State = new AnimatorState("Base Layer.DamagedAir2", null, this.AnimatorStates);
-            this.DamagedAir3State = new AnimatorState("Base Layer.DamagedAir3", null, this.AnimatorStates);
+            var airAttack1State = new AnimatorState("Base Layer.AirAtk1", this.AnimatorStates);
+            var airAttack2_0State = new AnimatorState("Base Layer.AirAtk2_0", this.AnimatorStates);
+            var airAttack2_1State = new AnimatorState("Base Layer.AirAtk2_1", this.AnimatorStates);
+            var airAttack2_2State = new AnimatorState("Base Layer.AirAtk2_2", this.AnimatorStates);
+            var landAttack1State = new AnimatorState("Base Layer.LandAtk1", this.AnimatorStates);
+            var landAttack2_0State = new AnimatorState("Base Layer.LandAtk2_0", this.AnimatorStates);
+            var landAttack2_1State = new AnimatorState("Base Layer.LandAtk2_1", this.AnimatorStates);
+            var landAttack2_2State = new AnimatorState("Base Layer.LandAtk2_2", this.AnimatorStates);
+            
+            
+            var damagedGround1State = new AnimatorState("Base Layer.DamagedGround1", this.AnimatorStates);
+            var damagedGround2State = new AnimatorState("Base Layer.DamagedGround2", this.AnimatorStates);
+            var damagedGround3State = new AnimatorState("Base Layer.DamagedGround3", this.AnimatorStates);
+            var damagedAir1State = new AnimatorState("Base Layer.DamagedAir1", this.AnimatorStates);
+            var damagedAir2State = new AnimatorState("Base Layer.DamagedAir2", this.AnimatorStates);
+            var damagedAir3State = new AnimatorState("Base Layer.DamagedAir3", this.AnimatorStates);
 
 
 
@@ -145,24 +176,24 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
                 this.JumpState,
                 this.Jmp2State,
                 this.LandState,
-                this.AirAttack1State,
-                this.AirAttack2_0State,
-                this.AirAttack2_1State,
-                this.AirAttack2_2State,
+                airAttack1State,
+                airAttack2_0State,
+                airAttack2_1State,
+                airAttack2_2State,
             }
             .ForEach(y => y.Tags.Add(inAirTag));
 
 
             new[]
             {
-                this.AirAttack1State,
-                this.LandAttack1State,
-                this.AirAttack2_0State,
-                this.AirAttack2_1State,
-                this.AirAttack2_2State,
-                this.LandAttack2_0State,
-                this.LandAttack2_1State,
-                this.LandAttack2_2State,
+                airAttack1State,
+                airAttack2_0State,
+                airAttack2_1State,
+                airAttack2_2State,
+                landAttack1State,
+                landAttack2_0State,
+                landAttack2_1State,
+                landAttack2_2State,
             }
             .ForEach(y =>
             {
@@ -173,29 +204,29 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
 
             new[]
             {
-                this.AirAttack2_1State,
-                this.AirAttack2_2State,
-                this.LandAttack2_1State,
-                this.LandAttack2_2State,
+                airAttack2_1State,
+                airAttack2_2State,
+                landAttack2_1State,
+                landAttack2_2State,
             }
             .ForEach(y => y.Tags.Add(inRushAttackTag));
 
             new[]
             {
-                this.DamagedGround1State,
-                this.DamagedGround2State,
-                this.DamagedGround3State,
-                this.DamagedAir1State,
-                this.DamagedAir2State,
-                this.DamagedAir3State,
+                damagedGround1State,
+                damagedGround2State,
+                damagedGround3State,
+                damagedAir1State,
+                damagedAir2State,
+                damagedAir3State,
             }
             .ForEach(y => y.Tags.Add(damagedTag));
 
             new[]
             {
-                this.DamagedAir1State,
-                this.DamagedAir2State,
-                this.DamagedAir3State,
+                damagedAir1State,
+                damagedAir2State,
+                damagedAir3State,
             }
             .ForEach(y => y.Tags.Add(clearSecondJumpFlagTag));
 
@@ -207,6 +238,7 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
                 this.IdleState,
                 this.LocoState,
                 this.LandState,
+                this.RestState,
             }
             .ForEach(y => y.Tags.Add(attackableTag));
 
@@ -241,7 +273,7 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
 
 
             if (this.AnimatorStates.IsNotInTransition
-                && this.AnimatorStates.ActiveStates.Any(y => !y.Tags.Contains(inAttackTag)))
+                && !this.AnimatorStates.HasTag(inAttackTag))
             {
                 this.isInAttack = false;
                 this.Animator.SetBool("Attack1", false);
@@ -250,7 +282,7 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
             }
             
             if(this.AnimatorStates.IsNotInTransition
-                && this.AnimatorStates.ActiveStates.Any(y => y.Tags.Contains(clearSecondJumpFlagTag)))
+                && this.AnimatorStates.HasTag(clearSecondJumpFlagTag))
             {
                 this.isSecondJumpDone = false;
             }
@@ -270,6 +302,8 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
                 this.moveDirection *= -1f;
                 desiredHorizontalVelocity *= -1f;
             }
+
+            this.targetObject.transform.rotation = Quaternion.Euler(0, this.moveDirection * -60 + 10, 0);
 
             vlc *= this.moveDirection;
 
@@ -296,7 +330,7 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
                 var setVlc = desiredSpeed - (desiredSpeed - this.currentSpeed) * this.accelTime;// / Time.deltaTime;
                 this.currentSpeed = setVlc;
 
-                if (this.AnimatorStates.ActiveStates.Any(y => y.Tags.Contains(inAttackTag)))
+                if (this.AnimatorStates.HasTag(inAttackTag))
                 {
                     desiredHorizontalVelocity *= 0.9f;
                 }
@@ -319,9 +353,9 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
                     {
                         this.JumpRequest = true;
 
-                        this.JumpState.Request(this.Animator);
-                        this.LandState.Request(this.Animator, false);
-                        this.Jmp2State.Request(this.Animator, false);
+                        this.JumpTrigger.Set();// .Request(this.Animator);
+                        this.LandingTrigger.Clear();// .Request(this.Animator, false);
+                        this.SecondJumpTrigger.Clear();//.Request(this.Animator, false);
                         
                         this.isSecondJumpDone = false;
 
@@ -360,13 +394,12 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
 
                         desiredVerticalVelocity = jumpspeed;// * 0.8f;
 
-                        this.Jmp2State.Request(this.Animator);
-                        this.LandState.Request(this.Animator, false);
-                        this.JumpState.Request(this.Animator, false);
+                        this.SecondJumpTrigger.Set();// .Request(this.Animator);
+                        this.LandingTrigger.Clear();//.Request(this.Animator, false);
+                        this.JumpTrigger.Clear();//.Request(this.Animator, false);
                         
                         this.isSecondJumpDone = true;
-
-                        //Debug.Log(currentBaseState.fullPathHash.ToString());
+                        
                     }
                 }
             }
@@ -377,7 +410,7 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
 
             var attack2Flag = false;
 
-            if (this.AnimatorStates.ActiveStates.All(y => y.Tags.Contains(attackableTag))
+            if (this.AnimatorStates.HasTag(attackableTag)
                 && !this.AnimatorStates.IsInTransition
                 && !this.isInAttack)
             {
@@ -398,13 +431,13 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
                     attack2Flag = true;
                     //this.Animator.SetBool("Attack2", attack2Flag);
                 }
-                else if (this.IdleState.IsActive && Input.GetKeyDown(KeyCode.V))
+                else if ((this.IdleState.IsActive|| this.RestState.IsActive) && Input.GetKeyDown(KeyCode.V))
                 {
-                    this.RestState.Request(this.Animator);
+                    this.RestTrigger.Set();//.Request(this.Animator);
                 }
             }
             else if (this.isInAttack
-                && this.AnimatorStates.ActiveStates.Any(y => y.Tags.Contains(inRushAttackTag)))
+                && this.AnimatorStates.HasTag(inRushAttackTag))
             {
                 if (Input.GetKey(KeyCode.Z))
                 {
@@ -425,21 +458,27 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
             }
 
             // Gravity
-            if (!isInAttack)
-            {
-                desiredVerticalVelocity -= 20f * Time.deltaTime;
-            }
-            else
-            {
-                if (desiredVerticalVelocity > 0)
-                {
-                    desiredVerticalVelocity -= 10f * Time.deltaTime;
-                }
-                else
-                {
-                    desiredVerticalVelocity -= 5f * Time.deltaTime;
-                }
-            }
+            var gravity
+                = (!isInAttack) ? 20f
+                : (desiredVerticalVelocity > 0) ? 10f
+                : 5f;
+            desiredVerticalVelocity -= gravity * Time.deltaTime;
+
+            //if (!isInAttack)
+            //{
+            //    desiredVerticalVelocity -= 20f * Time.deltaTime;
+            //}
+            //else
+            //{
+            //    if (desiredVerticalVelocity > 0)
+            //    {
+            //        desiredVerticalVelocity -= 10f * Time.deltaTime;
+            //    }
+            //    else
+            //    {
+            //        desiredVerticalVelocity -= 5f * Time.deltaTime;
+            //    }
+            //}
 
             // Landing
             var jumping = this.JumpState.IsActive || this.Jmp2State.IsActive;
@@ -452,7 +491,7 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
             {
                 if (!this.LandState.IsActive)
                 {
-                    this.LandState.Request(this.Animator);
+                    this.LandingTrigger.Set();//.Request(this.Animator);
                     this.isSecondJumpDone = true;
                 }
             }            
@@ -481,7 +520,7 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Characters.Humanoid
             this.Controller.Move(transform.TransformDirection(this.Velocity) * Time.deltaTime);
 
             // Clear animator triggers
-            this.AnimatorStates.ClearTriggers(this.Animator);
+            //this.AnimatorStates.ClearTriggers(this.Animator);
 
         }
 

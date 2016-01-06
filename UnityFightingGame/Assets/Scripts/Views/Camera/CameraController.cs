@@ -25,6 +25,8 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Camera
 
         private Vector3 oldPos; // マウスの位置を保存する変数
 
+        private Vector3 positionOffset;
+
         // 注視点オブジェクトが未設定の場合、新規に生成する
         void setupFocusObject(string name)
         {
@@ -42,6 +44,8 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Camera
                 this.setupFocusObject("CameraFocusObject");
             }
 
+            this.positionOffset = Vector3.zero;
+
             // 注視点オブジェクトをカメラの親にする
             Transform trans = this.transform;
             transform.parent = this.focusObj.transform;
@@ -49,13 +53,19 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Camera
             // カメラの方向ベクトル(ローカルのZ方向)を注視点オブジェクトに向ける
             trans.LookAt(this.focusObj.transform.position);
 
+            this.transform.position = this.focusObj.transform.position
+                + (this.transform.position - this.focusObj.transform.position) * 0.4f;
+            this.cameraTranslate(new Vector3(0, 0.7f, 0));
+            //this.mouseWheelEvent(-0.5f);
+
+            //this.focusObj.transform.position = this.target.transform.position - this.positionOffset;
             return;
         }
 
         void Update()
         {
-            this.focusObj.transform.position = this.target.transform.position;
-
+            this.focusObj.transform.position = this.target.transform.position;// -this.positionOffset;
+            this.focusObj.transform.Translate(this.positionOffset);
             // マウス関係のイベントを関数にまとめる
             this.mouseEvent();
 
@@ -116,7 +126,7 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Camera
             else if (Input.GetMouseButton((int)MouseButtonDown.MBD_MIDDLE))
             {
                 // マウス中ボタンをドラッグした場合(注視点の移動)
-                this.cameraTranslate(-diff / 10.0f * dragSensitivity);
+                this.cameraTranslate(-diff / 20.0f * dragSensitivity);
 
             }
             else if (Input.GetMouseButton((int)MouseButtonDown.MBD_RIGHT))
@@ -138,7 +148,8 @@ namespace Boredbone.UnityFightingGame.Scripts.Views.Camera
             Transform trans = this.transform;
 
             // カメラのローカル座標軸を元に注視点オブジェクトを移動する
-            focusTrans.Translate((trans.right * -vec.x) + (trans.up * vec.y));
+            //focusTrans.Translate((trans.right * -vec.x) + (trans.up * vec.y));
+            this.positionOffset += (trans.right * -vec.x) + (trans.up * vec.y);
 
             return;
         }

@@ -11,20 +11,20 @@ namespace Boredbone.GameScripts.Helpers
     {
 
         public int Hash { get; private set; }
-        public string Trigger { get; private set; }
+        //public string Trigger { get; private set; }
 
         public bool IsActive { get; private set; }
 
-        public bool IsAutoTriggerClear { get; set; }
+        //public bool IsAutoTriggerClear { get; set; }
 
         public HashSet<string> Tags { get; private set; }
 
 
-        public AnimatorState(string name, string trigger, AnimatorStateManager manager)
+        public AnimatorState(string name, AnimatorStateManager manager)
         {
             this.Hash = Animator.StringToHash(name);
-            this.Trigger = trigger;
-            this.IsAutoTriggerClear = trigger != null;
+            //this.Trigger = trigger;
+            //this.IsAutoTriggerClear = trigger != null;
 
             this.Tags = new HashSet<string>();
 
@@ -37,19 +37,19 @@ namespace Boredbone.GameScripts.Helpers
             return this.IsActive;
         }
 
-        public void Request(Animator animator, bool value)
-        {
-            if (this.Trigger == null)
-            {
-                return;
-            }
-            animator.SetBool(this.Trigger, value);
-        }
-
-        public void Request(Animator animator)
-        {
-            this.Request(animator, true);
-        }
+        //public void Request(Animator animator, bool value)
+        //{
+        //    if (this.Trigger == null)
+        //    {
+        //        return;
+        //    }
+        //    animator.SetBool(this.Trigger, value);
+        //}
+        //
+        //public void Request(Animator animator)
+        //{
+        //    this.Request(animator, true);
+        //}
     }
 
 }
