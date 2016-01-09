@@ -37,18 +37,18 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters
             this.CheckKeyboard(this.Core.KeyboardInput[1].Right, KeyCode.RightArrow);
             this.CheckKeyboard(this.Core.KeyboardInput[1].Up, KeyCode.UpArrow);
 
-            this.CheckKeyboard(this.Core.KeyboardInput[1].Buttons[0], KeyCode.Alpha1);
-            this.CheckKeyboard(this.Core.KeyboardInput[1].Buttons[1], KeyCode.Alpha2);
-            this.CheckKeyboard(this.Core.KeyboardInput[1].Buttons[2], KeyCode.Alpha3);
-            this.CheckKeyboard(this.Core.KeyboardInput[1].Buttons[3], KeyCode.Alpha4);
+            this.CheckKeyboard(this.Core.KeyboardInput[1].Buttons[0], KeyCode.Keypad1);
+            this.CheckKeyboard(this.Core.KeyboardInput[1].Buttons[1], KeyCode.Keypad2);
+            this.CheckKeyboard(this.Core.KeyboardInput[1].Buttons[2], KeyCode.Keypad3);
+            this.CheckKeyboard(this.Core.KeyboardInput[1].Buttons[3], KeyCode.Keypad4);
 
         }
 
         private void CheckKeyboard(KeyStatus target,KeyCode key)
         {
-            target.IsDown = Input.GetKey(KeyCode.Z);
-            target.IsPressed = Input.GetKeyDown(KeyCode.Z);
-            target.IsReleased = Input.GetKeyUp(KeyCode.Z);
+            target.IsDown = Input.GetKey(key);
+            target.IsPressed = Input.GetKeyDown(key);
+            target.IsReleased = Input.GetKeyUp(key);
         }
         
 

@@ -18,8 +18,13 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Camera
     {
         private GameObject focusObj = null; // 注視点となるオブジェクト
 
-        [SerializeField]
-        private GameObject target = null;
+        //[SerializeField]
+        public GameObject target0 = null;
+        public GameObject target1 = null;
+        public GameObject target2 = null;
+
+        private GameObject[] targets;
+        private int targetIndex;
 
         public float dragSensitivity = 1f;
 
@@ -38,6 +43,9 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Camera
 
         void Start()
         {
+            this.targets = new[] { this.target0, this.target1, this.target2 };
+            this.targetIndex = 0;
+
             // 注視点オブジェクトの有無を確認
             if (this.focusObj == null)
             {
@@ -64,7 +72,13 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Camera
 
         void Update()
         {
-            this.focusObj.transform.position = this.target.transform.position;// -this.positionOffset;
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                this.targetIndex++;
+            }
+
+
+            this.focusObj.transform.position = this.targets[this.targetIndex % this.targets.Length].transform.position;// -this.positionOffset;
             this.focusObj.transform.Translate(this.positionOffset);
             // マウス関係のイベントを関数にまとめる
             this.mouseEvent();

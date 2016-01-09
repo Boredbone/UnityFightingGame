@@ -23,10 +23,17 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
         public int ColorIndex => this.Player.ColorIndex;
         public bool Mirror => this.Player.Mirror;
 
+        public int InitialPosition => this.Player.Team == 0 ? -1 : 1;
+
         private float Life;
         private float LifeMax = 100;
 
         private AppCore Core { get; set; }
+
+        private Subject<bool> MoveStartSubject { get; set; }
+        private Subject<bool> MoveStopSubject { get; set; }
+        private Subject<bool> PunchSubject { get; set; }
+
 
 
         public HumanoidModel()
@@ -36,6 +43,27 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
 
             this.UpdatedSubject = new Subject<bool>().AddTo(this.Disposables);
 
+            this.MoveStartSubject = new Subject<bool>().AddTo(this.Disposables);
+            this.MoveStopSubject = new Subject<bool>().AddTo(this.Disposables);
+
+            this.MoveStartSubject
+                .TimeInterval()
+                .Where(y => y.Interval < TimeSpan.FromMilliseconds(400))
+                .Select(_ => true)
+                .Merge(this.MoveStopSubject.Select(_ => false))
+                .Subscribe(y => this.DesiredParameters.IsRunning = y)
+                .AddTo(this.Disposables);
+
+
+            this.PunchSubject = new Subject<bool>().AddTo(this.Disposables);
+
+            this.PunchSubject
+                .TimeInterval()
+                .Where(y => y.Interval < TimeSpan.FromMilliseconds(200))
+                .Select(_ => true)
+                .Merge(this.PunchSubject.Throttle(TimeSpan.FromMilliseconds(200)).Select(_ => false))
+                .Subscribe(y => this.DesiredParameters.RushPunch = y)
+                .AddTo(this.Disposables);
 
         }
 
@@ -49,24 +77,44 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
 
         public void Update(UpdateArgs args)
         {
+            this.DecodeInput();
+
+            this.UpdatedSubject.OnNext(true);
+        }
+
+        private void DecodeInput()
+        {
+
             if (this.Player.InputType == InputType.Keyboard)
             {
                 var key = this.Core.KeyboardInput[this.Player.InputIndex];
 
-                this.DesiredParameters.HorizontalVelocity = ((key.Right.IsDown ? 1 : 0) - (key.Left.IsDown ? 1 : 0)) * 2f;
+                this.DesiredParameters.HorizontalVelocity = (key.Right.IsDown ? 1 : 0) - (key.Left.IsDown ? 1 : 0);
+
+                if (key.Right.IsPressed || key.Left.IsPressed)
+                {
+                    this.MoveStartSubject.OnNext(true);
+                }
+                if (key.Right.IsReleased || key.Left.IsReleased)
+                {
+                    this.MoveStopSubject.OnNext(true);
+                }
 
                 this.DesiredParameters.Jump = key.Up.IsPressed;
                 this.DesiredParameters.Crouch = key.Down.IsDown;
 
                 this.DesiredParameters.Punch = key.Buttons[0].IsPressed;
                 this.DesiredParameters.Kick = key.Buttons[1].IsPressed;
-                this.DesiredParameters.RushPunch = key.Buttons[2].IsDown;
-                this.DesiredParameters.Rest = key.Buttons[4].IsPressed;
+
+                if (this.DesiredParameters.Punch)
+                {
+                    this.PunchSubject.OnNext(true);
+                }
+
+                //this.DesiredParameters.RushPunch = key.Buttons[2].IsDown;
+                this.DesiredParameters.Rest = key.Buttons[3].IsPressed;
 
             }
-
-
-            this.UpdatedSubject.OnNext(true);
         }
 
 
@@ -87,6 +135,8 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
     {
         public float HorizontalVelocity { get; internal set; }
         //public float VerticalVelocity { get; internal set; }
+
+        public bool IsRunning { get; internal set; }
 
         public bool Jump { get; internal set; }
         public bool Crouch { get; internal set; }

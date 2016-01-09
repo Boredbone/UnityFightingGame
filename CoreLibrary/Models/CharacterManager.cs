@@ -19,21 +19,21 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models
                 CharacterType = CharacterType.Humanoid,
                 InputType = InputType.Keyboard,
                 InputIndex = 0,
-                Team=0,
-                Mirror=false,
-                ColorIndex=1,
+                Team = 0,
+                Mirror = false,
+                ColorIndex = 0,
             },
             new PlayerSettings()
             {
                 CharacterType = CharacterType.Humanoid,
                 InputType = InputType.Keyboard,
                 InputIndex = 1,
-                Team=1,
-                Mirror=true,
-                ColorIndex=0,
+                Team = 1,
+                Mirror = true,
+                ColorIndex = 1,
             },
         };
-        
+
 
         public CharacterManager(AppCore core)
         {
