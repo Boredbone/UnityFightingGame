@@ -439,7 +439,44 @@ ModelImporter:
       heightFromFeet: 0
       mirror: 0
       bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
-      curves: []
+      curves:
+      - name: AttackEnabled
+        curve:
+          serializedVersion: 2
+          curve:
+          - time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+          - time: 0.45
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+          - time: 0.5
+            value: 1
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+          - time: 0.88
+            value: 1
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+          - time: 0.93
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+          - time: 1
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+          preInfinity: 2
+          postInfinity: 2
+          rotationOrder: 0
       events:
       - time: 0.9670588
         functionName: OnMotionEnded

@@ -584,6 +584,43 @@ ModelImporter:
           preInfinity: 2
           postInfinity: 2
           rotationOrder: 0
+      - name: AttackEnabled
+        curve:
+          serializedVersion: 2
+          curve:
+          - time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+          - time: 0.17285156
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+          - time: 0.25390625
+            value: 1
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+          - time: 0.88
+            value: 1
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+          - time: 0.97
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+          - time: 1
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+          preInfinity: 3
+          postInfinity: 3
+          rotationOrder: 0
       events: []
       transformMask: []
       maskType: 0

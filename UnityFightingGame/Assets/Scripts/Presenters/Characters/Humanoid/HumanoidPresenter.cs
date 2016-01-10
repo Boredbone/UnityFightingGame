@@ -90,11 +90,16 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
         private const string clearSecondJumpFlagTag = "ClearSecondJumpFlag";
         private const string damagedTag = "Damaged";
 
+        private const string punchAttackTag = "PunchAttack";
+        private const string kickAttackTag = "KickAttack";
+
 
 
         private float moveDirection = 1f;
 
         private HumanoidModel Model { get; set; }
+
+        private AttackColliderControllr AttackCollider { get; set; }
 
 
 
@@ -128,14 +133,24 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
 
             this.InitializeAnimatorStates();
 
+            
+            this.AttackCollider= this.transform.AsEnumerable()
+                .First(x => x.name.Equals("AttackColliders")).GetComponent<AttackColliderControllr>();
+
+
+
+
+
+
+
+
             this.Velocity = Vector3.zero;
             this.currentSpeed = 0f;
 
             this.JumpRequest = false;
             this.isSecondJumpDone = false;
             this.isInAttack = false;
-
-            //if(this.mo)
+            
 
             var pos = this.transform.position;
             pos.x = this.Model.InitialPosition * -3f;
@@ -188,7 +203,6 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
             var damagedAir1State = new AnimatorState("Base Layer.DamagedAir1", this.AnimatorStates);
             var damagedAir2State = new AnimatorState("Base Layer.DamagedAir2", this.AnimatorStates);
             var damagedAir3State = new AnimatorState("Base Layer.DamagedAir3", this.AnimatorStates);
-
 
 
             new[]
@@ -265,6 +279,24 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
             .ForEach(y => y.Tags.Add(attackableTag));
 
 
+            new[]
+            {
+                airAttack2_0State,
+                airAttack2_1State,
+                airAttack2_2State,
+                landAttack2_0State,
+                landAttack2_1State,
+                landAttack2_2State,
+            }
+            .ForEach(y => y.Tags.Add(punchAttackTag));
+
+            new[]
+            {
+                airAttack1State,
+                landAttack1State,
+            }
+            .ForEach(y => y.Tags.Add(kickAttackTag));
+
         }
 
         private void ToggleMoveDirection()
@@ -303,6 +335,7 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
             this.AnimatorStates.IsInTransition = this.Animator.IsInTransition(0);
 
 
+            // not in attack
             if (this.AnimatorStates.IsNotInTransition
                 && !this.AnimatorStates.HasTag(inAttackTag))
             {
@@ -310,9 +343,29 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
                 this.Animator.SetBool("Attack1", false);
                 this.Animator.SetBool("Attack2", false);
                 this.Animator.SetBool("Attack2_0", false);
+                this.AttackCollider.ClearCollider();
             }
-            
-            if(this.AnimatorStates.IsNotInTransition
+
+            var attackEnabled = this.Animator.GetFloat("AttackEnabled") > 0.5f;
+
+
+            if (this.AnimatorStates.IsNotInTransition && attackEnabled
+                && this.AnimatorStates.HasTag(punchAttackTag))
+            {
+                this.AttackCollider.ActivateCollider("Punch");
+            }
+            else if (this.AnimatorStates.IsNotInTransition && attackEnabled
+               && this.AnimatorStates.HasTag(kickAttackTag))
+            {
+                this.AttackCollider.ActivateCollider("Kick");
+            }
+            else if (!attackEnabled)
+            {
+                this.AttackCollider.ClearCollider();
+            }
+
+
+            if (this.AnimatorStates.IsNotInTransition
                 && this.AnimatorStates.HasTag(clearSecondJumpFlagTag))
             {
                 this.isSecondJumpDone = false;
