@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Boredbone.UnityFightingGame.CoreLibrary.Helpers;
 
 namespace Boredbone.UnityFightingGame.CoreLibrary.Models
 {
@@ -11,6 +12,8 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models
         private AppCore Core { get; set; }
 
         private List<ICharacter> Characters { get; set; }
+
+        public ICharacter this[int index] => this.Characters[index];
 
         private PlayerSettings[] Players = new[]
         {
@@ -70,6 +73,8 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models
 
             //if(this.Characters.Count(y=>y.CharacterType==))
 
+            model.Id = this.Characters.Count;
+
             model.Initialize(this.Core, player);
 
             this.Characters.Add(model);
@@ -94,9 +99,11 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models
 
     public interface ICharacter : IDisposable
     {
+        int Id { get; set; }
         void Initialize(AppCore core, PlayerSettings player);
         void Update(UpdateArgs args);
         CharacterType CharacterType { get; }
+        ReactiveProperty<int> Life { get; }
     }
 
     public enum CharacterType

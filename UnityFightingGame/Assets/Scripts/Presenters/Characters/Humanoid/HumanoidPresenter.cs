@@ -12,9 +12,7 @@ using UniRx;
 
 namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
 {
-   
-
-    public class HumanoidPresenter : MonoBehaviour
+    public class HumanoidPresenter : BehaviorBase
     {
         private Component targetObject;
         
@@ -94,20 +92,21 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
         private const string kickAttackTag = "KickAttack";
 
 
+        private int previousAttackState;
 
         private float moveDirection = 1f;
 
         private HumanoidModel Model { get; set; }
 
-        private AttackColliderControllr AttackCollider { get; set; }
-
-
+        private AttackColliderController AttackCollider { get; set; }
 
         /// <summary>
         /// Use this for initialization
         /// </summary>
-        public void Start()
+        protected override void OnStart()
         {
+            base.OnStart();
+
             this.Model = AppCore.GetEnvironment(null).Characters.GetModel<HumanoidModel>();
 
             var children = this.transform.AsEnumerable().Where(y => y.tag.Equals("HumanoidModel")).ToArray();
@@ -135,12 +134,35 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
 
             
             this.AttackCollider= this.transform.AsEnumerable()
-                .First(x => x.name.Equals("AttackColliders")).GetComponent<AttackColliderControllr>();
+                .First(x => x.name.Equals("AttackColliders")).GetComponent<AttackColliderController>();
+            this.AttackCollider.Id = this.Model.Id;
+            
 
 
+            var vital = this.transform.AsEnumerable()
+                .First(x => x.name.Equals("VitalBody")).GetComponent<VitalController>();
+            vital.Id = this.Model.Id;
+            vital.Damaged.Subscribe(y => this.Model.OnDamaged(y)).AddTo(this.Disposables);
 
+            this.previousAttackState = 0;
 
+            /*
+            var prevIsRush = false;
+            this.AnimatorStates.StateChanged
+                .Subscribe(current =>
+                {
+                    var isRush = this.AnimatorStates.HasTag(inRushAttackTag);
 
+                    if (isRush && prevIsRush)
+                    {
+                        //this.AttackCollider.Information.Power = 1;
+                        //this.AttackCollider.ActivateCollider("Punch");
+                    }
+
+                    prevIsRush = isRush;
+                })
+                .AddTo(this.Disposables);
+                */
 
 
 
@@ -163,14 +185,14 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
                 this.ToggleMoveDirection();
             }
 
-            this.Model.Updated.Subscribe(_ => this.OnUpdate()).AddTo(this.Disposables);
+            this.Model.Updated.Subscribe(_ => this.Move()).AddTo(this.Disposables);
         }
 
 
         private void InitializeAnimatorStates()
         {
 
-            this.AnimatorStates = new AnimatorStateManager();
+            this.AnimatorStates = new AnimatorStateManager().AddTo(this.Disposables);
 
             this.JumpTrigger = new AnimationTrigger("Jump", this.Animator);
             this.SecondJumpTrigger = new AnimationTrigger("SecondJump", this.Animator);
@@ -306,62 +328,64 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
             this.currentSpeed *= -1f;
         }
 
+        private void StartAttack(string key)
+        {
+            if (this.AnimatorStates.IsNotInTransition
+                && this.previousAttackState != this.AnimatorStates.CurrentState)
+            {
+                this.AttackCollider.ActivateCollider(key);
+                this.previousAttackState = this.AnimatorStates.CurrentState;
+            }
+        }
+
         /// <summary>
         /// Update is called once per frame
         /// </summary>
-        private void OnUpdate()
+        private void Move()
         {
-
             
-
-
-            //var h = Input.GetAxis("Horizontal");
-            //var v = Input.GetAxis("Vertical");
 
             var input = this.Model.DesiredParameters;
             var velocity = input.HorizontalVelocity * (this.Model.DesiredParameters.IsRunning ? 1f : 0.4f);// v * 0.3f + h;
+            
 
-            //if (vlc > 0)
-            //{
-            //    Debug.Log(this.Model.DesiredParameters.IsRunning.ToString());
-            //}
-
-
-
-            // 参照用のステート変数にBase Layer (0)の現在のステートを設定する
-            var currentBaseState = this.Animator.GetCurrentAnimatorStateInfo(0);
-
-            this.AnimatorStates.CheckAll(currentBaseState.fullPathHash);
-            this.AnimatorStates.IsInTransition = this.Animator.IsInTransition(0);
+            //this.AnimatorStates.IsInTransition = this.Animator.IsInTransition(0);
+            this.AnimatorStates.CheckAll(this.Animator.IsInTransition(0),
+                this.Animator.GetCurrentAnimatorStateInfo(0).fullPathHash);
 
 
             // not in attack
             if (this.AnimatorStates.IsNotInTransition
+                //&& this.AnimatorStates.HasTag(damagedTag))
                 && !this.AnimatorStates.HasTag(inAttackTag))
             {
                 this.isInAttack = false;
-                this.Animator.SetBool("Attack1", false);
-                this.Animator.SetBool("Attack2", false);
-                this.Animator.SetBool("Attack2_0", false);
                 this.AttackCollider.ClearCollider();
+
+                if (this.AnimatorStates.HasTag(damagedTag))
+                {
+                    this.Animator.SetBool("Attack1", false);
+                    this.Animator.SetBool("Attack2", false);
+                    this.Animator.SetBool("Attack2_0", false);
+                }
+
             }
 
             var attackEnabled = this.Animator.GetFloat("AttackEnabled") > 0.5f;
 
 
-            if (this.AnimatorStates.IsNotInTransition && attackEnabled
-                && this.AnimatorStates.HasTag(punchAttackTag))
+            if (attackEnabled && this.AnimatorStates.HasTag(punchAttackTag))
             {
-                this.AttackCollider.ActivateCollider("Punch");
+                this.StartAttack("Punch");
             }
-            else if (this.AnimatorStates.IsNotInTransition && attackEnabled
-               && this.AnimatorStates.HasTag(kickAttackTag))
+            else if (attackEnabled && this.AnimatorStates.HasTag(kickAttackTag))
             {
-                this.AttackCollider.ActivateCollider("Kick");
+                this.StartAttack("Kick");
             }
             else if (!attackEnabled)
             {
                 this.AttackCollider.ClearCollider();
+                this.previousAttackState = 0;
             }
 
 
@@ -372,7 +396,7 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
             }
 
 
-
+            
             var desiredHorizontalVelocity = this.Velocity.z;
             var desiredVerticalVelocity = this.Velocity.y;
 
@@ -388,21 +412,25 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
                 desiredHorizontalVelocity *= -1f;
             }
 
-            this.targetObject.transform.rotation = Quaternion.Euler(0, this.moveDirection * -60 + 10, 0);
+            this.targetObject.transform.rotation = Quaternion.Euler(0, this.moveDirection * -70 + 10, 0);
 
             velocity *= this.moveDirection;
+
+            if (isGrounded)
+            {
+                this.JumpTrigger.Clear();
+                this.LandingTrigger.Clear();
+                this.SecondJumpTrigger.Clear();
+            }
 
 
             if (isGrounded)
             {
-                //var vlc = h * 0.3f + v;
-
                 if (this.Lan2State.IsActive)
                 {
                     velocity = 0;
                 }
-
-                // Animator側で設定している"Speed"パラメタにvを渡す
+                
                 this.Animator.SetFloat("Speed", velocity * 5f);
 
 
@@ -421,7 +449,6 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
                 }
                 else
                 {
-                    //desiredVelocity = new Vector3(0, 0, setVlc) * speed; //new Vector3(h, 0, v);//
                     desiredHorizontalVelocity = setVlc * velocityCoefficient;
                 }
 
@@ -432,15 +459,15 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
                 //    transform.Rotate(new Vector3(0, 1, 0), 45);
                 //}
 
-                if (input.Jump)// Input.GetKeyDown(KeyCode.Space))// && !this.jumpRequest && (this.IdleState.IsActive || this.LocoState.IsActive))
+                if (input.Jump)
                 {
                     if (!this.JumpRequest && (this.IdleState.IsActive || this.LocoState.IsActive))
                     {
                         this.JumpRequest = true;
 
-                        this.JumpTrigger.Set();// .Request(this.Animator);
-                        this.LandingTrigger.Clear();// .Request(this.Animator, false);
-                        this.SecondJumpTrigger.Clear();//.Request(this.Animator, false);
+                        this.JumpTrigger.Set();
+                        this.LandingTrigger.Clear();
+                        this.SecondJumpTrigger.Clear();
                         
                         this.isSecondJumpDone = false;
 
@@ -456,11 +483,9 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
                 if ((this.JumpState.IsActive || this.LandState.IsActive)
                     && !this.JumpRequest && !this.isSecondJumpDone)
                 {
-                    if (input.Jump)// Input.GetKeyDown(KeyCode.Space))
+                    if (input.Jump)
                     {
-
-                        //var vlc = h * 0.3f + v;
-
+                        
                         var vd = input.HorizontalVelocity * velocityCoefficient * this.moveDirection * 0.3f;//velocity
 
                         if (desiredHorizontalVelocity * vd < 0.0001)
@@ -479,9 +504,9 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
 
                         desiredVerticalVelocity = jumpSpeed;// * 0.8f;
 
-                        this.SecondJumpTrigger.Set();// .Request(this.Animator);
-                        this.LandingTrigger.Clear();//.Request(this.Animator, false);
-                        this.JumpTrigger.Clear();//.Request(this.Animator, false);
+                        this.SecondJumpTrigger.Set();
+                        this.LandingTrigger.Clear();
+                        this.JumpTrigger.Clear();
                         
                         this.isSecondJumpDone = true;
                         
@@ -499,35 +524,38 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
                 && !this.AnimatorStates.IsInTransition
                 && !this.isInAttack)
             {
-                if (input.Kick)// Input.GetKeyDown(KeyCode.X))
+                if (input.Kick)
                 {
                     this.isInAttack = true;
                     this.Animator.SetBool("Attack1", true);
                     desiredVerticalVelocity += jumpSpeed * 0.2f;
+                    this.AttackCollider.Information.Power = 3;
                 }
-                else if (input.Punch)// Input.GetKeyDown(KeyCode.C))
+                else if (input.Punch)
                 {
                     this.isInAttack = true;
                     this.Animator.SetBool("Attack2_0", true);
+                    this.AttackCollider.Information.Power = 2;
                 }
-                else if (input.RushPunch)// Input.GetKey(KeyCode.Z))
+                else if (input.RushPunch)
                 {
                     this.isInAttack = true;
                     attack2Flag = true;
-                    //this.Animator.SetBool("Attack2", attack2Flag);
+                    this.AttackCollider.Information.Power = 1;
                 }
-                else if ((this.IdleState.IsActive|| this.RestState.IsActive) && input.Rest)// Input.GetKeyDown(KeyCode.V))
+                else if ((this.IdleState.IsActive|| this.RestState.IsActive) && input.Rest)
                 {
-                    this.RestTrigger.Set();//.Request(this.Animator);
+                    this.RestTrigger.Set();
                 }
             }
             else if (this.isInAttack
                 && this.AnimatorStates.HasTag(inRushAttackTag))
             {
-                if (input.RushPunch)// Input.GetKey(KeyCode.Z))
+                if (input.RushPunch)
                 {
                     attack2Flag = true;
-                    //this.Animator.SetBool("Attack2", attack2Flag);
+                    this.Animator.SetBool("Attack2_0", false);
+                    this.AttackCollider.Information.Power = 1;
                 }
             }
             
@@ -548,22 +576,7 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
                 : (desiredVerticalVelocity > 0) ? 10f
                 : 5f;
             desiredVerticalVelocity -= gravity * Time.deltaTime;
-
-            //if (!isInAttack)
-            //{
-            //    desiredVerticalVelocity -= 20f * Time.deltaTime;
-            //}
-            //else
-            //{
-            //    if (desiredVerticalVelocity > 0)
-            //    {
-            //        desiredVerticalVelocity -= 10f * Time.deltaTime;
-            //    }
-            //    else
-            //    {
-            //        desiredVerticalVelocity -= 5f * Time.deltaTime;
-            //    }
-            //}
+            
 
             // Landing
             var jumping = this.JumpState.IsActive || this.Jmp2State.IsActive;
@@ -576,7 +589,7 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
             {
                 if (!this.LandState.IsActive)
                 {
-                    this.LandingTrigger.Set();//.Request(this.Animator);
+                    this.LandingTrigger.Set();
                     this.isSecondJumpDone = true;
                 }
             }            
@@ -593,13 +606,7 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
 
 
             // Commit
-
-            //desiredVelocity.z = 0f;
-
-            //desiredVelocity.y = desiredVerticalVelocity;
-            //desiredVelocity.z = desiredHorizontalVelocity;
-
-            this.Velocity = new Vector3(0, desiredVerticalVelocity, desiredHorizontalVelocity);// desiredVelocity;
+            this.Velocity = new Vector3(0, desiredVerticalVelocity, desiredHorizontalVelocity);
 
             // Move character
             this.Controller.Move(transform.TransformDirection(this.Velocity) * Time.deltaTime);
@@ -608,10 +615,7 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
             // update model
             this.Model.ViewParameters.HorizontalPosition = this.transform.position.z;
             this.Model.ViewParameters.VerticalPosition = this.transform.position.y;
-
-            // Clear animator triggers
-            //this.AnimatorStates.ClearTriggers(this.Animator);
-
+            
         }
 
 
@@ -638,24 +642,6 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
         }
 
 
-
-
-        private CompositeDisposable Disposables { get; set; }
-
-        public void Awake()
-        {
-            if (this.Disposables != null)
-            {
-                this.Disposables.Clear();
-            }
-            this.Disposables = new CompositeDisposable();
-        }
-        public void OnDestroy()
-        {
-            if (this.Disposables != null)
-            {
-                this.Disposables.Clear();
-            }
-        }
+        
     }
 }

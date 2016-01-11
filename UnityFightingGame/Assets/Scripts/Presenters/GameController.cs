@@ -1,12 +1,15 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 using System.Collections;
 using UniRx;
 using System;
 using Boredbone.UnityFightingGame.CoreLibrary.Models;
+using Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid;
+using Boredbone.GameScripts.Helpers;
 
 namespace Boredbone.UnityFightingGame.Scripts.Presenters
 {
-    public class GameController : MonoBehaviour
+    public class GameController : BehaviorBase
     {
 
         //private MainSceneModel Presenter { get; set; }
@@ -21,8 +24,15 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters
         private InputReceiver InputReceiver { get; set; }
 
 
-        public void Awake()
+        public Text life0;
+        public Text life1;
+
+
+
+        protected override void OnAwake()
         {
+            base.OnAwake();
+
             this.Core = AppCore.GetEnvironment(null);
             this.Core.Initialize();
 
@@ -32,8 +42,13 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters
         }
 
         // Use this for initialization
-        public void Start()
+        protected override void OnStart()
         {
+            base.OnStart();
+
+            this.Core.Characters[0].Life.Subscribe(y => this.life0.text = y.ToString()).AddTo(this.Disposables);
+            this.Core.Characters[1].Life.Subscribe(y => this.life1.text = y.ToString()).AddTo(this.Disposables);
+
             //this.Presenter = new MainSceneModel();
 
 
@@ -48,8 +63,9 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters
         }
 
         // Update is called once per frame
-        public void Update()
+        protected override void OnUpdate()
         {
+            base.OnUpdate();
 
             this.InputReceiver.UpdateInputs();
 

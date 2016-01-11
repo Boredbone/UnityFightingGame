@@ -24,9 +24,10 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
         public bool Mirror => this.Player.Mirror;
 
         public int InitialPosition => this.Player.Team == 0 ? -1 : 1;
-
-        private float Life;
-        private float LifeMax = 100;
+        
+        public ReactiveProperty<int> Life { get; }
+        //private float Life;
+        private int LifeMax = 0;
 
         private AppCore Core { get; set; }
 
@@ -34,7 +35,7 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
         private Subject<bool> MoveStopSubject { get; set; }
         private Subject<bool> PunchSubject { get; set; }
 
-
+        public int Id { get; set; }
 
         public HumanoidModel()
         {
@@ -65,11 +66,13 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
                 .Subscribe(y => this.DesiredParameters.RushPunch = y)
                 .AddTo(this.Disposables);
 
+            this.Life = new ReactiveProperty<int>(this.LifeMax).AddTo(this.Disposables);
+
         }
 
         public void Initialize(AppCore core, PlayerSettings player)
         {
-            this.Life = this.LifeMax;
+            this.Life.Value = this.LifeMax;
             this.Player = player;
             this.Core = core;
         }
@@ -117,7 +120,10 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
             }
         }
 
-
+        public void OnDamaged(AttackInformation information)
+        {
+            this.Life.Value += information.Power;
+        }
     }
     public class ViewParameters
     {

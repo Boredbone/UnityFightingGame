@@ -5,6 +5,7 @@ TagManager:
   serializedVersion: 2
   tags:
   - HumanoidModel
+  - VitalBody
   layers:
   - Default
   - TransparentFX
@@ -14,8 +15,8 @@ TagManager:
   - UI
   - 
   - 
-  - 
-  - 
+  - Attack
+  - VitalBody
   - 
   - 
   - 
