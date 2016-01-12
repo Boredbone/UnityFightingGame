@@ -5,7 +5,7 @@ using System.Linq;
 using Boredbone.Utility.Extensions;
 using Boredbone.GameScripts.Helpers;
 
-namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
+namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
 {
 
     public class OffsetCorrection : MonoBehaviour

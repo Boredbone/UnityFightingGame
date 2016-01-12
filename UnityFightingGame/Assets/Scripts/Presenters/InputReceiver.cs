@@ -5,7 +5,7 @@ using System.Text;
 using Boredbone.UnityFightingGame.CoreLibrary.Models;
 using UnityEngine;
 
-namespace Boredbone.UnityFightingGame.Scripts.Presenters
+namespace Boredbone.UnityFightingGame.Presenters
 {
     public class InputReceiver
     {

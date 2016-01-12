@@ -10,16 +10,16 @@ using Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid;
 using Boredbone.UnityFightingGame.CoreLibrary.Models;
 using UniRx;
 
-namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
+namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
 {
     public class HumanoidPresenter : BehaviorBase
     {
         private Component targetObject;
-        
+
         private float velocityCoefficient = 6f;
         private float jumpSpeed = 10f;
         private float accelTime = 0.5f;
-        
+
         private CharacterController Controller { get; set; }
         private Animator Animator { get; set; }
 
@@ -58,7 +58,7 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
         //private AnimatorState DamagedAir2State { get; set; }
         //private AnimatorState DamagedAir3State { get; set; }
 
-        
+
 
         private bool _fieldJumpRequest = false;
         public bool JumpRequest
@@ -71,15 +71,16 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
                     _fieldJumpRequest = value;
                     this.JumpStartTrigger = false;
                 }
+                Debug.Log("jump request" + value.ToString());
             }
         }
-        
+
         private bool JumpStartTrigger { get; set; }
 
 
         private bool isSecondJumpDone;
         private bool isInAttack;
-        
+
 
         private const string inAirTag = "InAir";
         private const string inAttackTag = "InAttack";
@@ -96,7 +97,7 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
 
         private float moveDirection = 1f;
 
-        private HumanoidModel Model { get; set; }
+        //private HumanoidModel Model { get; set; }
 
         private AttackColliderController AttackCollider { get; set; }
 
@@ -107,16 +108,18 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
         {
             base.OnStart();
 
-            this.Model = AppCore.GetEnvironment(null).Characters.GetModel<HumanoidModel>();
+            var model = AppCore.GetEnvironment(null).Characters.GetModel<HumanoidModel>();
 
             var children = this.transform.AsEnumerable().Where(y => y.tag.Equals("HumanoidModel")).ToArray();
 
-            var index = this.Model.ColorIndex;
+            var index = model.ColorIndex;
 
-            for (int i = 0; i < children.Length; i++)
-            {
-                children[i].gameObject.SetActive(i == index);
-            }
+            children.ForEach((c, i) => c.gameObject.SetActive(i == index));
+
+            //for (int i = 0; i < children.Length; i++)
+            //{
+            //    children[i].gameObject.SetActive(i == index);
+            //}
 
             this.targetObject = children[index];
 
@@ -132,17 +135,17 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
 
             this.InitializeAnimatorStates();
 
-            
-            this.AttackCollider= this.transform.AsEnumerable()
+
+            this.AttackCollider = this.transform.AsEnumerable()
                 .First(x => x.name.Equals("AttackColliders")).GetComponent<AttackColliderController>();
-            this.AttackCollider.Id = this.Model.Id;
-            
+            this.AttackCollider.Id = model.Id;
+
 
 
             var vital = this.transform.AsEnumerable()
                 .First(x => x.name.Equals("VitalBody")).GetComponent<VitalController>();
-            vital.Id = this.Model.Id;
-            vital.Damaged.Subscribe(y => this.Model.OnDamaged(y)).AddTo(this.Disposables);
+            vital.Id = model.Id;
+            vital.Damaged.Subscribe(y => model.OnDamaged(y)).AddTo(this.Disposables);
 
             this.previousAttackState = 0;
 
@@ -172,23 +175,58 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
             this.JumpRequest = false;
             this.isSecondJumpDone = false;
             this.isInAttack = false;
-            
+
 
             var pos = this.transform.position;
-            pos.x = this.Model.InitialPosition * -3f;
+            pos.x = model.InitialPosition * -3f;
             this.transform.position = pos;
 
 
             this.moveDirection = 1f;// this.Model.Mirror ? -1f : 1f;
-            if (this.Model.Mirror)
+            if (model.Mirror)
             {
                 this.ToggleMoveDirection();
             }
 
-            this.Model.Updated.Subscribe(_ => this.Move()).AddTo(this.Disposables);
+            var parameters = new TemporaryParameters(model.DesiredParameters);
+
+            model.Updated.Subscribe(_ =>
+            {
+                // Check state
+                this.AnimatorStates.CheckAll(this.Animator.IsInTransition(0),
+                this.Animator.GetCurrentAnimatorStateInfo(0).fullPathHash);
+
+                // store parameters
+                //parameters.Input = model.DesiredParameters;
+                parameters.IsGrounded = this.Controller.isGrounded;
+                parameters.HorizontalVelocity = this.Velocity.z;
+                parameters.VerticalVelocity = this.Velocity.y;
+
+                // Action
+                this.HorizontalMove(parameters);
+                this.Jump(parameters);
+                this.Attack(parameters);
+                this.Gravity(parameters);
+
+                // Commit
+                this.Velocity = new Vector3(0, parameters.VerticalVelocity, parameters.HorizontalVelocity);
+
+                // Move character
+                this.Controller.Move(transform.TransformDirection(this.Velocity) * Time.deltaTime);
+
+                // update model
+                model.ViewParameters.HorizontalPosition = this.transform.position.z;
+                model.ViewParameters.VerticalPosition = this.transform.position.y;
+            })
+            .AddTo(this.Disposables);
+
+            //this.Model = model;
         }
 
 
+        /// <summary>
+        /// Define Animator states
+        /// </summary>
         private void InitializeAnimatorStates()
         {
 
@@ -217,8 +255,8 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
             var landAttack2_0State = new AnimatorState("Base Layer.LandAtk2_0", this.AnimatorStates);
             var landAttack2_1State = new AnimatorState("Base Layer.LandAtk2_1", this.AnimatorStates);
             var landAttack2_2State = new AnimatorState("Base Layer.LandAtk2_2", this.AnimatorStates);
-            
-            
+
+
             var damagedGround1State = new AnimatorState("Base Layer.DamagedGround1", this.AnimatorStates);
             var damagedGround2State = new AnimatorState("Base Layer.DamagedGround2", this.AnimatorStates);
             var damagedGround3State = new AnimatorState("Base Layer.DamagedGround3", this.AnimatorStates);
@@ -321,6 +359,9 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
 
         }
 
+        /// <summary>
+        /// Mirror walking direction
+        /// </summary>
         private void ToggleMoveDirection()
         {
             this.transform.Rotate(new Vector3(0, 1, 0), 180);
@@ -328,6 +369,10 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
             this.currentSpeed *= -1f;
         }
 
+        /// <summary>
+        /// Avtivate attack collider
+        /// </summary>
+        /// <param name="key"></param>
         private void StartAttack(string key)
         {
             if (this.AnimatorStates.IsNotInTransition
@@ -338,21 +383,157 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
             }
         }
 
+
         /// <summary>
-        /// Update is called once per frame
+        /// Walk or run
         /// </summary>
-        private void Move()
+        /// <param name="parameters"></param>
+        private void HorizontalMove(TemporaryParameters parameters)
         {
-            
 
-            var input = this.Model.DesiredParameters;
-            var velocity = input.HorizontalVelocity * (this.Model.DesiredParameters.IsRunning ? 1f : 0.4f);// v * 0.3f + h;
-            
+            var velocity = parameters.Input.HorizontalVelocity
+                * (parameters.Input.IsRunning ? 1f : 0.4f);
 
-            //this.AnimatorStates.IsInTransition = this.Animator.IsInTransition(0);
-            this.AnimatorStates.CheckAll(this.Animator.IsInTransition(0),
-                this.Animator.GetCurrentAnimatorStateInfo(0).fullPathHash);
+            // Change Direction
+            if (velocity * this.moveDirection < 0 && parameters.IsGrounded)
+            {
+                this.ToggleMoveDirection();
+                parameters.HorizontalVelocity *= -1f;
+            }
 
+            this.targetObject.transform.rotation = Quaternion.Euler(0, this.moveDirection * -70 + 10, 0);
+
+            velocity *= this.moveDirection;
+
+
+            // Horizontal Move
+            if (parameters.IsGrounded)
+            {
+                if (this.Lan2State.IsActive)
+                {
+                    velocity = 0;
+                }
+
+                this.Animator.SetFloat("Speed", velocity * 5f);
+
+
+                var desiredSpeed = velocity > 0 ? velocity * 0.6f : 0;
+
+                this.currentSpeed = desiredSpeed
+                    - (desiredSpeed - this.currentSpeed) * this.accelTime;// / Time.deltaTime;
+
+                if (this.AnimatorStates.HasTag(inAttackTag))
+                {
+                    parameters.HorizontalVelocity *= 0.9f;
+                }
+                else
+                {
+                    parameters.HorizontalVelocity = this.currentSpeed * velocityCoefficient;
+                }
+            }
+            else
+            {
+                this.currentSpeed = 0f;
+            }
+
+        }
+
+        /// <summary>
+        /// Jump or second jump
+        /// </summary>
+        /// <param name="parameters"></param>
+        private void Jump(TemporaryParameters parameters)
+        {
+
+            // Clear jump flags
+            if (parameters.IsGrounded)
+            {
+                this.JumpTrigger.Clear();
+                this.LandingTrigger.Clear();
+                this.SecondJumpTrigger.Clear();
+                parameters.VerticalVelocity = 0f;
+            }
+
+
+            if (this.AnimatorStates.IsNotInTransition
+                && this.AnimatorStates.HasTag(clearSecondJumpFlagTag))
+            {
+                this.isSecondJumpDone = false;
+            }
+
+            //if (this.AnimatorStates.IsNotInTransition
+            //    && !this.JumpState.IsActive)
+            //{
+            //    this.JumpRequest = false;
+            //}
+
+            // Jump
+            if (parameters.Input.Jump)// && !this.JumpRequest)
+            {
+                if (parameters.IsGrounded)
+                {
+                    if (this.IdleState.IsActive || this.LocoState.IsActive)
+                    {
+                        this.JumpRequest = true;
+
+                        this.JumpTrigger.Set();
+                        this.LandingTrigger.Clear();
+                        this.SecondJumpTrigger.Clear();
+
+                        this.isSecondJumpDone = false;
+
+                        //Debug.Log("jump");
+                    }
+                }
+                else
+                {
+                    if ((this.JumpState.IsActive || this.LandState.IsActive)
+                        && !this.isSecondJumpDone)
+                    {
+
+                        var vd = parameters.Input.HorizontalVelocity * velocityCoefficient * this.moveDirection * 0.3f;
+
+                        if (parameters.HorizontalVelocity * vd < 0.0001)
+                        {
+                            parameters.HorizontalVelocity = vd;
+
+                        }
+                        else if (parameters.HorizontalVelocity * vd > 0.0001)
+                        {
+                            parameters.HorizontalVelocity += vd * 0.3f;
+                        }
+                        else
+                        {
+                            parameters.HorizontalVelocity += vd;
+                        }
+
+                        parameters.VerticalVelocity = jumpSpeed;// * 0.8f;
+
+                        this.SecondJumpTrigger.Set();
+                        this.LandingTrigger.Clear();
+                        this.JumpTrigger.Clear();
+
+                        this.isSecondJumpDone = true;
+
+                    }
+                }
+            }
+
+            // Jump
+            if (this.JumpState.IsActive && this.JumpRequest && this.JumpStartTrigger)
+            {
+                parameters.VerticalVelocity = jumpSpeed;
+                this.JumpRequest = false;
+            }
+
+        }
+
+        /// <summary>
+        /// attack
+        /// </summary>
+        /// <param name="parameters"></param>
+        private void Attack(TemporaryParameters parameters)
+        {
 
             // not in attack
             if (this.AnimatorStates.IsNotInTransition
@@ -388,162 +569,33 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
                 this.previousAttackState = 0;
             }
 
-
-            if (this.AnimatorStates.IsNotInTransition
-                && this.AnimatorStates.HasTag(clearSecondJumpFlagTag))
-            {
-                this.isSecondJumpDone = false;
-            }
-
-
-            
-            var desiredHorizontalVelocity = this.Velocity.z;
-            var desiredVerticalVelocity = this.Velocity.y;
-
-            //var desiredVelocity = this.Velocity;
-            var isGrounded = this.Controller.isGrounded;
-
-            // Change Direction
-            if (velocity * this.moveDirection < 0 && isGrounded)
-            {
-                //transform.Rotate(new Vector3(0, 1, 0), 180);
-                //this.moveDirection *= -1f;
-                this.ToggleMoveDirection();
-                desiredHorizontalVelocity *= -1f;
-            }
-
-            this.targetObject.transform.rotation = Quaternion.Euler(0, this.moveDirection * -70 + 10, 0);
-
-            velocity *= this.moveDirection;
-
-            if (isGrounded)
-            {
-                this.JumpTrigger.Clear();
-                this.LandingTrigger.Clear();
-                this.SecondJumpTrigger.Clear();
-            }
-
-
-            if (isGrounded)
-            {
-                if (this.Lan2State.IsActive)
-                {
-                    velocity = 0;
-                }
-                
-                this.Animator.SetFloat("Speed", velocity * 5f);
-
-
-
-
-                var realVlc = velocity > 0 ? velocity : 0;
-
-                var desiredSpeed = realVlc * 0.6f;
-
-                var setVlc = desiredSpeed - (desiredSpeed - this.currentSpeed) * this.accelTime;// / Time.deltaTime;
-                this.currentSpeed = setVlc;
-
-                if (this.AnimatorStates.HasTag(inAttackTag))
-                {
-                    desiredHorizontalVelocity *= 0.9f;
-                }
-                else
-                {
-                    desiredHorizontalVelocity = setVlc * velocityCoefficient;
-                }
-
-                desiredVerticalVelocity = 0f;
-
-                //if (Input.GetKeyDown(KeyCode.DownArrow))
-                //{
-                //    transform.Rotate(new Vector3(0, 1, 0), 45);
-                //}
-
-                if (input.Jump)
-                {
-                    if (!this.JumpRequest && (this.IdleState.IsActive || this.LocoState.IsActive))
-                    {
-                        this.JumpRequest = true;
-
-                        this.JumpTrigger.Set();
-                        this.LandingTrigger.Clear();
-                        this.SecondJumpTrigger.Clear();
-                        
-                        this.isSecondJumpDone = false;
-
-                        //Debug.Log("jump");
-                    }
-                }
-            }
-            else
-            {
-                this.currentSpeed = 0f;
-
-
-                if ((this.JumpState.IsActive || this.LandState.IsActive)
-                    && !this.JumpRequest && !this.isSecondJumpDone)
-                {
-                    if (input.Jump)
-                    {
-                        
-                        var vd = input.HorizontalVelocity * velocityCoefficient * this.moveDirection * 0.3f;//velocity
-
-                        if (desiredHorizontalVelocity * vd < 0.0001)
-                        {
-                            desiredHorizontalVelocity = vd;
-
-                        }
-                        else if (desiredHorizontalVelocity * vd > 0.0001)
-                        {
-                            desiredHorizontalVelocity += vd * 0.3f;
-                        }
-                        else
-                        {
-                            desiredHorizontalVelocity += vd;
-                        }
-
-                        desiredVerticalVelocity = jumpSpeed;// * 0.8f;
-
-                        this.SecondJumpTrigger.Set();
-                        this.LandingTrigger.Clear();
-                        this.JumpTrigger.Clear();
-                        
-                        this.isSecondJumpDone = true;
-                        
-                    }
-                }
-            }
-            
-            
-
             // Attack
-
             var attack2Flag = false;
 
             if (this.AnimatorStates.HasTag(attackableTag)
                 && !this.AnimatorStates.IsInTransition
                 && !this.isInAttack)
             {
-                if (input.Kick)
+                if (parameters.Input.Kick)
                 {
                     this.isInAttack = true;
                     this.Animator.SetBool("Attack1", true);
-                    desiredVerticalVelocity += jumpSpeed * 0.2f;
+                    parameters.VerticalVelocity += jumpSpeed * 0.2f;
                     this.AttackCollider.Information.Power = 3;
                 }
-                else if (input.Punch)
+                else if (parameters.Input.Punch)
                 {
                     this.isInAttack = true;
                     this.Animator.SetBool("Attack2_0", true);
                     this.AttackCollider.Information.Power = 2;
                 }
-                else if (input.RushPunch)
+                else if (parameters.Input.RushPunch)
                 {
                     this.isInAttack = true;
                     attack2Flag = true;
                     this.AttackCollider.Information.Power = 1;
                 }
-                else if ((this.IdleState.IsActive|| this.RestState.IsActive) && input.Rest)
+                else if ((this.IdleState.IsActive || this.RestState.IsActive) && parameters.Input.Rest)
                 {
                     this.RestTrigger.Set();
                 }
@@ -551,74 +603,71 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
             else if (this.isInAttack
                 && this.AnimatorStates.HasTag(inRushAttackTag))
             {
-                if (input.RushPunch)
+                if (parameters.Input.RushPunch)
                 {
                     attack2Flag = true;
                     this.Animator.SetBool("Attack2_0", false);
                     this.AttackCollider.Information.Power = 1;
                 }
             }
-            
+
             this.Animator.SetBool("Attack2", attack2Flag);
 
+        }
 
-
-            // Jump
-            if (this.JumpState.IsActive && this.JumpRequest && this.JumpStartTrigger)
-            {
-                desiredVerticalVelocity = jumpSpeed;
-                this.JumpRequest = false;
-            }
+        /// <summary>
+        /// gravity effect
+        /// </summary>
+        /// <param name="parameters"></param>
+        private void Gravity(TemporaryParameters parameters)
+        {
 
             // Gravity
             var gravity
                 = (!isInAttack) ? 20f
-                : (desiredVerticalVelocity > 0) ? 10f
+                : (parameters.VerticalVelocity > 0) ? 10f
                 : 5f;
-            desiredVerticalVelocity -= gravity * Time.deltaTime;
-            
+            parameters.VerticalVelocity -= gravity * Time.deltaTime;
+
 
             // Landing
             var jumping = this.JumpState.IsActive || this.Jmp2State.IsActive;
             var stability = jumping ? this.Animator.GetFloat("JumpStability") : 0f;
 
-            if ((desiredVerticalVelocity < -jumpSpeed * 0.6f && jumping)
-                || (jumping && isGrounded && (stability > 0.8)))
-               // || (Math.Abs(desiredVelocity.y) > 0.1 && desiredVelocity.y < this.jumpspeed * 0.5))))
-                //!this.JumpRequest))// // || (!jumping && !isIdle && cc.isGrounded))
+            if ((parameters.VerticalVelocity < -jumpSpeed * 0.6f && jumping)
+                || (jumping && parameters.IsGrounded && (stability > 0.8)))
+            // || (Math.Abs(desiredVelocity.y) > 0.1 && desiredVelocity.y < this.jumpspeed * 0.5))))
+            //!this.JumpRequest))// // || (!jumping && !isIdle && cc.isGrounded))
             {
                 if (!this.LandState.IsActive)
                 {
                     this.LandingTrigger.Set();
                     this.isSecondJumpDone = true;
                 }
-            }            
+            }
 
 
-            this.Animator.SetBool("OnGround", isGrounded);
+            this.Animator.SetBool("OnGround", parameters.IsGrounded);
 
-            if (isGrounded && !this.AnimatorStates.IsInTransition)
+            if (parameters.IsGrounded && !this.AnimatorStates.IsInTransition)
             {
                 this.isSecondJumpDone = false;
             }
 
-
-
-
-            // Commit
-            this.Velocity = new Vector3(0, desiredVerticalVelocity, desiredHorizontalVelocity);
-
-            // Move character
-            this.Controller.Move(transform.TransformDirection(this.Velocity) * Time.deltaTime);
-
-
-            // update model
-            this.Model.ViewParameters.HorizontalPosition = this.transform.position.z;
-            this.Model.ViewParameters.VerticalPosition = this.transform.position.y;
-            
         }
 
+        ///// <summary>
+        ///// Update is called once per frame
+        ///// </summary>
+        //private void Move(TemporaryParameters parameters)
+        //{
+        //    
+        //}
 
+        /// <summary>
+        /// Attack animation end event
+        /// </summary>
+        /// <param name="arg"></param>
         public void OnMotionEnded(string arg)
         {
             if (arg.Equals("KickEnded"))
@@ -633,6 +682,10 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
             }
         }
 
+        /// <summary>
+        /// jump animation event
+        /// </summary>
+        /// <param name="arg"></param>
         public void OnJumpStateChanged(string arg)
         {
             if (arg.Equals("JumpTakeoff"))
@@ -641,7 +694,43 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
             }
         }
 
-
         
+        void OnControllerColliderHit(ControllerColliderHit hit)
+        {
+            // hit.gameObjectで衝突したオブジェクト情報が得られる
+
+            var target = hit.gameObject;
+
+            if (target.CompareTag("Player")
+                && this.transform.position.y > target.transform.position.y + this.Controller.height * 0.5f
+                && this.Velocity.y < jumpSpeed * 0.1f)
+            {
+                var distance = this.transform.position.z - target.transform.position.z;
+                var direction = 1;// distance > 0 ? 1 : -1;
+
+
+                this.Controller.Move(transform.TransformDirection(new Vector3(0, 0, direction * 4f * Time.deltaTime)));
+
+
+            }
+            
+        }
+
+
+        /// <summary>
+        /// Parameters for move
+        /// </summary>
+        private class TemporaryParameters
+        {
+            public DesiredParameters Input { get; private set; }
+            public bool IsGrounded { get; set; }
+            public float HorizontalVelocity { get; set; }
+            public float VerticalVelocity { get; set; }
+
+            public TemporaryParameters(DesiredParameters input)
+            {
+                this.Input = input;
+            }
+        }
     }
 }

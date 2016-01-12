@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-namespace Boredbone.UnityFightingGame.Scripts.Presenters.Camera
+namespace Boredbone.UnityFightingGame.Presenters.Camera
 {
     // マウスのボタンをあらわす番号がわかりにくかったので名前を付けた
     enum MouseButtonDown
@@ -158,7 +158,7 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Camera
         // カメラを移動する関数
         void cameraTranslate(Vector3 vec)
         {
-            Transform focusTrans = this.focusObj.transform;
+            //Transform focusTrans = this.focusObj.transform;
             Transform trans = this.transform;
 
             // カメラのローカル座標軸を元に注視点オブジェクトを移動する

@@ -14,7 +14,7 @@ using UnityEngine;
 using System.Collections;
 using UnityChan;
 
-namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
+namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
 {
     public class RandomWindWithoutUi : MonoBehaviour
     {

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-namespace Boredbone.UnityFightingGame.Scripts.Presenters.Camera
+namespace Boredbone.UnityFightingGame.Presenters.Camera
 {
     public class MovableCamera : MonoBehaviour
     {
@@ -53,8 +53,8 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Camera
         private Vector2 cameraPosParamTemp = Vector2.zero;
         // Use this for initialization
 
-        private Vector3 originalPosition;
-        private Transform originalTransform;
+        //private Vector3 originalPosition;
+        //private Transform originalTransform;
 
         void Start()
         {
@@ -64,8 +64,8 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters.Camera
                 this.defaultAngularPositionY / 180f * Mathf.PI);
             this.pivotTemp = this.transform.position;
 
-            this.originalTransform = this.transform;
-            this.originalPosition = this.transform.position;
+            //this.originalTransform = this.transform;
+            //this.originalPosition = this.transform.position;
 
         }
 

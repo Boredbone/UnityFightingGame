@@ -89,7 +89,7 @@ namespace Boredbone.Utility.Extensions
                 action(item);
             }
         }
-        public static void ForEachIndexed<T>(this IEnumerable<T> source, Action<T, int> action)
+        public static void ForEach<T>(this IEnumerable<T> source, Action<T, int> action)
         {
             int index = 0;
             foreach (var item in source)

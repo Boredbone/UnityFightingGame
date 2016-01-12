@@ -6,7 +6,7 @@ using Boredbone.GameScripts.Helpers;
 using UniRx;
 using UnityEngine;
 
-namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters
+namespace Boredbone.UnityFightingGame.Presenters.Characters
 {
     class TriggerObserver : BehaviorBase
     {

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-namespace Boredbone.UnityFightingGame.Scripts.Presenters.Stage
+namespace Boredbone.UnityFightingGame.Presenters.Stage
 {
     public class OneWayScaffoldTrigger : MonoBehaviour
     {

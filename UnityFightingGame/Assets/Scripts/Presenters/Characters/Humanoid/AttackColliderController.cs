@@ -10,7 +10,7 @@ using Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid;
 using Boredbone.UnityFightingGame.CoreLibrary.Models;
 using UniRx;
 
-namespace Boredbone.UnityFightingGame.Scripts.Presenters.Characters.Humanoid
+namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
 {
     public class AttackColliderController : BehaviorBase
     {

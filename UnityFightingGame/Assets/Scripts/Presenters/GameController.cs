@@ -7,7 +7,7 @@ using Boredbone.UnityFightingGame.CoreLibrary.Models;
 using Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid;
 using Boredbone.GameScripts.Helpers;
 
-namespace Boredbone.UnityFightingGame.Scripts.Presenters
+namespace Boredbone.UnityFightingGame.Presenters
 {
     public class GameController : BehaviorBase
     {
@@ -46,8 +46,8 @@ namespace Boredbone.UnityFightingGame.Scripts.Presenters
         {
             base.OnStart();
 
-            this.Core.Characters[0].Life.Subscribe(y => this.life0.text = y.ToString()).AddTo(this.Disposables);
-            this.Core.Characters[1].Life.Subscribe(y => this.life1.text = y.ToString()).AddTo(this.Disposables);
+            this.Core.Characters[0].Life.SubscribeToText(this.life0, y => y.ToString()).AddTo(this.Disposables);
+            this.Core.Characters[1].Life.SubscribeToText(this.life1, y => y.ToString()).AddTo(this.Disposables);
 
             //this.Presenter = new MainSceneModel();
 

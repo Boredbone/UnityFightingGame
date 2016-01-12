@@ -13,8 +13,8 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
         public ViewParameters ViewParameters { get; }
         public DesiredParameters DesiredParameters { get; }
 
-        private Subject<bool> UpdatedSubject { get; }
-        public IObservable<bool> Updated => this.UpdatedSubject.AsObservable(); 
+        private Subject<Unit> UpdatedSubject { get; }
+        public IObservable<Unit> Updated => this.UpdatedSubject.AsObservable(); 
 
         public CharacterType CharacterType => CharacterType.Humanoid;
 
@@ -31,9 +31,9 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
 
         private AppCore Core { get; set; }
 
-        private Subject<bool> MoveStartSubject { get; set; }
-        private Subject<bool> MoveStopSubject { get; set; }
-        private Subject<bool> PunchSubject { get; set; }
+        private Subject<Unit> MoveStartSubject { get; set; }
+        private Subject<Unit> MoveStopSubject { get; set; }
+        private Subject<Unit> PunchSubject { get; set; }
 
         public int Id { get; set; }
 
@@ -42,10 +42,10 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
             this.ViewParameters = new ViewParameters();
             this.DesiredParameters = new DesiredParameters();
 
-            this.UpdatedSubject = new Subject<bool>().AddTo(this.Disposables);
+            this.UpdatedSubject = new Subject<Unit>().AddTo(this.Disposables);
 
-            this.MoveStartSubject = new Subject<bool>().AddTo(this.Disposables);
-            this.MoveStopSubject = new Subject<bool>().AddTo(this.Disposables);
+            this.MoveStartSubject = new Subject<Unit>().AddTo(this.Disposables);
+            this.MoveStopSubject = new Subject<Unit>().AddTo(this.Disposables);
 
             this.MoveStartSubject
                 .TimeInterval()
@@ -56,7 +56,7 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
                 .AddTo(this.Disposables);
 
 
-            this.PunchSubject = new Subject<bool>().AddTo(this.Disposables);
+            this.PunchSubject = new Subject<Unit>().AddTo(this.Disposables);
 
             this.PunchSubject
                 .TimeInterval()
@@ -82,7 +82,7 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
         {
             this.DecodeInput();
 
-            this.UpdatedSubject.OnNext(true);
+            this.UpdatedSubject.OnNext(Unit.Default);
         }
 
         private void DecodeInput()
@@ -96,11 +96,11 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
 
                 if (key.Right.IsPressed || key.Left.IsPressed)
                 {
-                    this.MoveStartSubject.OnNext(true);
+                    this.MoveStartSubject.OnNext(Unit.Default);
                 }
                 if (key.Right.IsReleased || key.Left.IsReleased)
                 {
-                    this.MoveStopSubject.OnNext(true);
+                    this.MoveStopSubject.OnNext(Unit.Default);
                 }
 
                 this.DesiredParameters.Jump = key.Up.IsPressed;
@@ -111,7 +111,7 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
 
                 if (this.DesiredParameters.Punch)
                 {
-                    this.PunchSubject.OnNext(true);
+                    this.PunchSubject.OnNext(Unit.Default);
                 }
 
                 //this.DesiredParameters.RushPunch = key.Buttons[2].IsDown;

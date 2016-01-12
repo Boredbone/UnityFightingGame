@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Boredbone.UnityFightingGame.CoreLibrary.Helpers;
+using UniRx;
 
 namespace Boredbone.UnityFightingGame.CoreLibrary.Models
 {
