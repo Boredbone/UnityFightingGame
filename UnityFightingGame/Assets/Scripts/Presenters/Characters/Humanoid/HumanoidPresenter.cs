@@ -613,7 +613,7 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
             {
                 if (this.StrongDamageState.IsActive)
                 {
-                    parameters.HorizontalVelocity -= this.Animator.GetFloat("DamageMove");
+                    parameters.HorizontalVelocity -= this.Animator.GetFloat("DamageMove") * (parameters.IsGrounded ? 1f : 0.2f);
                 }
                 else if (this.FlyDamageState.IsActive)
                 {
@@ -646,6 +646,7 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
                         break;
                 }
                 this.isSecondJumpDone = false;
+                this.AttackCollider.ClearCollider();
             }
             else
             {

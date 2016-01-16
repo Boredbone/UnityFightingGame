@@ -635,7 +635,7 @@ ModelImporter:
     - serializedVersion: 16
       name: JUMP00_fixed
       takeName: Take 001
-      firstFrame: 1
+      firstFrame: 7
       lastFrame: 18
       wrapMode: 0
       orientationOffsetY: 0
@@ -659,25 +659,25 @@ ModelImporter:
         curve:
           serializedVersion: 2
           curve:
-          - time: 0.00001531854
-            value: -0.00053639186
-            inSlope: -0.009352485
-            outSlope: -0.009352485
-            tangentMode: 0
-          - time: 0.19973652
-            value: -0.0003157768
+          - time: 0
+            value: 0
             inSlope: 0
             outSlope: 0
             tangentMode: 0
-          - time: 0.9024918
-            value: 1.0000001
-            inSlope: 0.003589779
-            outSlope: 0.003589779
+          - time: 0.3
+            value: 0
+            inSlope: 0
+            outSlope: 0
             tangentMode: 0
-          - time: 1.0039062
-            value: 1.0000031
-            inSlope: -0.002829464
-            outSlope: -0.002829464
+          - time: 0.78371006
+            value: 1.0000379
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+          - time: 1
+            value: 1
+            inSlope: 0
+            outSlope: 0
             tangentMode: 0
           preInfinity: 1
           postInfinity: 2
@@ -728,18 +728,18 @@ ModelImporter:
             inSlope: 0
             outSlope: 0
             tangentMode: 0
-          - time: 0.39944166
-            value: -0.00024403806
+          - time: 0.57
+            value: 0
             inSlope: 0.0035872017
             outSlope: 0.0035872017
             tangentMode: 0
-          - time: 0.46380258
-            value: 0.99877524
+          - time: 0.76
+            value: 1
             inSlope: 0.005345259
             outSlope: 0.005345259
             tangentMode: 0
-          - time: 1.0006964
-            value: 1.0008808
+          - time: 1
+            value: 1
             inSlope: 0
             outSlope: 0
             tangentMode: 0
@@ -747,7 +747,7 @@ ModelImporter:
           postInfinity: 3
           rotationOrder: 0
       events:
-      - time: 0.24705884
+      - time: 0.3299604
         functionName: OnJumpStateChanged
         data: JumpTakeoff
         objectReferenceParameter: {instanceID: 0}
