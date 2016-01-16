@@ -18,12 +18,19 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
         private Subject<AttackInformation> DamagedSubject { get; set; }
         public IObservable<AttackInformation> Damaged { get { return this.DamagedSubject.AsObservable(); } }
 
+        public bool IsEnabled { get; private set; }
+
+        private float invincibleTime;
+        private int lastAttackId;
+
         public int Id { get; set; }
 
         protected override void OnStart()
         {
             base.OnStart();
             this.DamagedSubject = new Subject<AttackInformation>().AddTo(this.Disposables);
+            this.invincibleTime = 0f;
+            this.lastAttackId = -1;
         }
 
         protected override void OnUpdate()
@@ -39,9 +46,18 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
         {
         }
 
-        public void OnDamaged(AttackInformation information)
+        public bool OnDamaged(AttackInformation information)
         {
-            this.DamagedSubject.OnNext(information);
+            //Debug.Log(information.Id.ToString() + ", " + this.lastAttackId.ToString() + ", " 
+            //    + this.invincibleTime.ToString() + ", " + Time.time.ToString());
+            if (information.Id != this.lastAttackId && this.invincibleTime < Time.time)
+            {
+                this.lastAttackId = information.Id;
+                this.invincibleTime = information.StayingTime + Time.time;
+                this.DamagedSubject.OnNext(information);
+                return true;
+            }
+            return false;
         }
     }
 }

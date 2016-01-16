@@ -37,10 +37,20 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
 
         public int Id { get; set; }
 
+        private bool isLastDamaged = false;
+        //private float lastDamage = 0f;
+        //private AttackType lastAttackType;
+
+        private AttackInformation LastDamage { get; }
+        private int guardingAttack = -1;
+
+
         public HumanoidModel()
         {
             this.ViewParameters = new ViewParameters();
             this.DesiredParameters = new DesiredParameters();
+
+            this.LastDamage = new AttackInformation();
 
             this.UpdatedSubject = new Subject<Unit>().AddTo(this.Disposables);
 
@@ -80,8 +90,36 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
 
         public void Update(UpdateArgs args)
         {
+            // User input
             this.DecodeInput();
 
+            // Damage
+            if (this.isLastDamaged)
+            {
+                if (this.LastDamage.Id == this.guardingAttack)
+                {
+                    this.DesiredParameters.IsGuarding = true;
+                    this.DesiredParameters.IsDamaged = false;
+                }
+                else
+                {
+                    this.Life.Value += (int)this.LastDamage.Power;
+
+                    this.DesiredParameters.IsGuarding = false;
+                    this.DesiredParameters.IsDamaged = true;
+                    this.DesiredParameters.DamageType = this.LastDamage.Type;
+                }
+                this.isLastDamaged = false;
+                this.LastDamage.Power = 0f;
+            }
+            else
+            {
+
+                this.DesiredParameters.IsGuarding = false;
+                this.DesiredParameters.IsDamaged = false;
+            }
+
+            // Update View
             this.UpdatedSubject.OnNext(Unit.Default);
         }
 
@@ -122,8 +160,19 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
 
         public void OnDamaged(AttackInformation information)
         {
-            this.Life.Value += information.Power;
+            this.isLastDamaged = true;
+            this.LastDamage.CopyFrom(information);
+            //this.lastDamage = information.Power;
+            //this.lastAttackType = information.Type;
+            //this.Life.Value += (int)information.Power;
         }
+
+
+        public void OnGuarding(AttackInformation information)
+        {
+            this.guardingAttack = information.Id;
+        }
+
     }
     public class ViewParameters
     {
@@ -151,6 +200,11 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
         public bool RushPunch { get; internal set; }
         public bool Kick { get; internal set; }
         public bool Rest { get; internal set; }
+
+        public bool IsDamaged { get; internal set; }
+        public AttackType DamageType { get; internal set; }
+
+        public bool IsGuarding { get; internal set; }
 
         internal DesiredParameters()
         {

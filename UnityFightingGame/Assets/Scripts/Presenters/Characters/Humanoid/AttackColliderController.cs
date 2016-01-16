@@ -14,10 +14,13 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
 {
     public class AttackColliderController : BehaviorBase
     {
-        private Dictionary<string,GameObject> Colliders { get; set; }
+        private Dictionary<string, GameObject> Colliders { get; set; }
 
 
         private Subject<Collider> HitSubject { get; set; }
+
+        private Subject<AttackInformation> GuardingSubject { get; set; }
+        public IObservable<AttackInformation> Guarding { get { return this.GuardingSubject.AsObservable(); } }
 
         public AttackInformation Information { get; private set; }
 
@@ -29,8 +32,9 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
             base.OnAwake();
 
             this.HitSubject = new Subject<Collider>().AddTo(this.Disposables);
+            this.GuardingSubject = new Subject<AttackInformation>().AddTo(this.Disposables);
 
-            this.HitSubject.Subscribe(_ => this.ClearCollider()).AddTo(this.Disposables);
+            //this.HitSubject.Subscribe(_ => this.ClearCollider()).AddTo(this.Disposables);
         }
 
         protected override void OnStart()
@@ -41,7 +45,7 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
 
             this.Colliders = this.transform.AsEnumerable().ToDictionary(y => y.name, y => y.gameObject);
 
-            foreach(var item in this.Colliders)
+            foreach (var item in this.Colliders)
             {
                 var observer = item.Value.GetComponent<TriggerObserver>();
                 observer.Triggered.Subscribe(other =>
@@ -57,15 +61,26 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
 
                         this.HitSubject.OnNext(other);
                     }
+                    else if (other.gameObject.layer == LayerMask.NameToLayer("Attack"))
+                    {
+                        var target = other.GetComponent<TriggerObserver>();
+                        if (target == null)
+                        {
+                            return;
+                        }
+                        target.OnGuarding(this.Information);
+                    }
                 })
                 .AddTo(this.Disposables);
+
+                observer.Guarding.Subscribe(this.GuardingSubject).AddTo(this.Disposables);
             }
 
             this.ClearCollider();
         }
 
 
-        
+
 
 
         public void ActivateCollider(string key)
@@ -74,6 +89,8 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
             {
                 Debug.Log("key not found");
             }
+            this.Information.GenerateNewId();
+
             this.Colliders.ForEach(y => y.Value.SetActive(y.Key.Equals(key)));
         }
 
@@ -102,8 +119,8 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
         //void OnTriggerExit(Collider other)
         //{
         //}
-        
+
     }
 
-    
+
 }
