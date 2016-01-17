@@ -19,6 +19,8 @@ namespace Boredbone.GameScripts.Helpers
 
         public HashSet<string> Tags { get; private set; }
 
+        //private static readonly Dictionary<string, int> cache = new Dictionary<string, int>();
+
 
         public AnimatorState(string name, AnimatorStateManager manager)
         {

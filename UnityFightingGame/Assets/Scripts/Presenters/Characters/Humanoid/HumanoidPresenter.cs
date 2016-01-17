@@ -66,6 +66,15 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
         //private AnimatorState DamagedAir2State { get; set; }
         //private AnimatorState DamagedAir3State { get; set; }
 
+        private AnimatorValueFloat AnimatorSpeed { get; set; }
+        private ReadOnlyAnimatorValueFloat AttackEnabled { get; set; }
+        private ReadOnlyAnimatorValueFloat DamageMove { get; set; }
+        private ReadOnlyAnimatorValueFloat JumpStability { get; set; }
+
+        private AnimatorValueBool OnGrond { get; set; }
+        private AnimatorValueBool Attack1 { get; set; }
+        private AnimatorValueBool Attack2_0 { get; set; }
+        private AnimatorValueBool Attack2 { get; set; }
 
 
         private bool _fieldJumpRequest = false;
@@ -139,7 +148,7 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
             this.Controller = gameObject.GetComponent<CharacterController>();
             this.Animator = this.targetObject.GetComponent<Animator>();
 
-            this.InitializeAnimatorStates();
+            this.InitializeAnimator();
 
 
             this.AttackCollider = this.transform.AsEnumerable()
@@ -243,10 +252,9 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
         /// <summary>
         /// Define Animator states
         /// </summary>
-        private void InitializeAnimatorStates()
+        private void InitializeAnimator()
         {
 
-            this.AnimatorStates = new AnimatorStateManager().AddTo(this.Disposables);
 
             this.JumpTrigger = new AnimationTrigger("Jump", this.Animator);
             this.SecondJumpTrigger = new AnimationTrigger("SecondJump", this.Animator);
@@ -258,6 +266,19 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
             this.FlyDamageTrigger = new AnimationTrigger("FlyDamage", this.Animator);
             this.StunDamageTrigger = new AnimationTrigger("StunDamage", this.Animator);
 
+
+            this.AnimatorSpeed = new AnimatorValueFloat("Speed", this.Animator);
+            this.AttackEnabled = new ReadOnlyAnimatorValueFloat("AttackEnabled", this.Animator);
+            this.DamageMove = new ReadOnlyAnimatorValueFloat("DamageMove", this.Animator);
+            this.JumpStability = new ReadOnlyAnimatorValueFloat("JumpStability", this.Animator);
+
+            this.OnGrond = new AnimatorValueBool("OnGround", this.Animator);
+            this.Attack1 = new AnimatorValueBool("Attack1", this.Animator);
+            this.Attack2_0 = new AnimatorValueBool("Attack2_0", this.Animator);
+            this.Attack2 = new AnimatorValueBool("Attack2", this.Animator);
+
+
+            this.AnimatorStates = new AnimatorStateManager().AddTo(this.Disposables);
 
 
             this.IdleState = new AnimatorState("Base Layer.Idle", this.AnimatorStates);
@@ -433,7 +454,8 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
                     velocity = 0;
                 }
 
-                this.Animator.SetFloat("Speed", velocity * 5f);
+                this.AnimatorSpeed.Value = velocity * 5f;
+                //this.Animator.SetFloat("Speed", velocity * 5f);
 
 
                 var desiredSpeed = velocity > 0 ? velocity * 0.6f : 0;
@@ -579,14 +601,17 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
 
                 if (this.AnimatorStates.HasTag(damagedTag))
                 {
-                    this.Animator.SetBool("Attack1", false);
-                    this.Animator.SetBool("Attack2", false);
-                    this.Animator.SetBool("Attack2_0", false);
+                    this.Attack1.Value = false;
+                    this.Attack2.Value = false;
+                    this.Attack2_0.Value = false;
+                    //this.Animator.SetBool("Attack1", false);
+                    //this.Animator.SetBool("Attack2", false);
+                    //this.Animator.SetBool("Attack2_0", false);
                 }
 
             }
 
-            var attackEnabled = this.Animator.GetFloat("AttackEnabled") > 0.5f;
+            var attackEnabled = this.AttackEnabled.Value > 0.5f;// this.Animator.GetFloat("AttackEnabled") > 0.5f;
 
 
             if (attackEnabled && this.AnimatorStates.HasTag(punchAttackTag))
@@ -613,11 +638,15 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
             {
                 if (this.StrongDamageState.IsActive)
                 {
-                    parameters.HorizontalVelocity -= this.Animator.GetFloat("DamageMove") * (parameters.IsGrounded ? 1f : 0.2f);
+                    parameters.HorizontalVelocity = this.DamageMove.Value * (parameters.IsGrounded ? 1f : 0.2f);
                 }
                 else if (this.FlyDamageState.IsActive)
                 {
-                    parameters.HorizontalVelocity -= this.Animator.GetFloat("DamageMove");
+                    parameters.HorizontalVelocity = this.DamageMove.Value;
+                }
+                else if (this.AnimatorStates.HasTag(damagedTag))
+                {
+                    parameters.HorizontalVelocity = 0f;
                 }
             }
 
@@ -660,7 +689,8 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
                     if (parameters.Desired.Kick)
                     {
                         this.isInAttack = true;
-                        this.Animator.SetBool("Attack1", true);
+                        this.Attack1.Value = true;
+                        //this.Animator.SetBool("Attack1", true);
                         parameters.VerticalVelocity += jumpSpeed * 0.2f;
                         this.AttackCollider.Information.Power = 3;
                         this.AttackCollider.Information.Type = AttackType.Strong;
@@ -668,7 +698,8 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
                     else if (parameters.Desired.Punch)
                     {
                         this.isInAttack = true;
-                        this.Animator.SetBool("Attack2_0", true);
+                        this.Attack2_0.Value = true;
+                        //this.Animator.SetBool("Attack2_0", true);
                         this.AttackCollider.Information.Power = 2;
                         this.AttackCollider.Information.Type = AttackType.Weak;
                     }
@@ -690,14 +721,17 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
                     if (parameters.Desired.RushPunch)
                     {
                         attack2Flag = true;
-                        this.Animator.SetBool("Attack2_0", false);
+                        this.Attack2_0.Value = true;
+                        //this.Animator.SetBool("Attack2_0", false);
                         this.AttackCollider.Information.Power = 1;
                         this.AttackCollider.Information.Type = AttackType.Weak;
                     }
                 }
             }
 
-            this.Animator.SetBool("Attack2", attack2Flag);
+
+            this.Attack2.Value = attack2Flag;
+            //this.Animator.SetBool("Attack2", attack2Flag);
 
         }
 
@@ -718,7 +752,7 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
 
             // Landing
             var jumping = this.JumpState.IsActive || this.Jmp2State.IsActive;
-            var stability = jumping ? this.Animator.GetFloat("JumpStability") : 0f;
+            var stability = jumping ? this.JumpStability.Value : 0f;// this.Animator.GetFloat("JumpStability") : 0f;
 
             if ((parameters.VerticalVelocity < -jumpSpeed * 0.6f && jumping)
                 || (jumping && parameters.IsGrounded && (stability > 0.8)))
@@ -732,8 +766,8 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
                 }
             }
 
-
-            this.Animator.SetBool("OnGround", parameters.IsGrounded);
+            this.OnGrond.Value = parameters.IsGrounded;
+            //this.Animator.SetBool("OnGround", parameters.IsGrounded);
 
             if (parameters.IsGrounded && !this.AnimatorStates.IsInTransition)
             {
@@ -758,12 +792,14 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
         {
             if (arg.Equals("KickEnded"))
             {
-                this.Animator.SetBool("Attack1", false);
+                this.Attack1.Value = false;
+                //this.Animator.SetBool("Attack1", false);
                 this.isInAttack = false;
             }
             else if (arg.Equals("PunchEnded"))
             {
-                this.Animator.SetBool("Attack2_0", false);
+                this.Attack2_0.Value = false;
+                //this.Animator.SetBool("Attack2_0", false);
                 this.isInAttack = false;
             }
         }
