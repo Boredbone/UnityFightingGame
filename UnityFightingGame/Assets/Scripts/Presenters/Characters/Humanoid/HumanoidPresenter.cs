@@ -240,8 +240,9 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
                 this.Controller.Move(transform.TransformDirection(this.Velocity) * Time.deltaTime);
 
                 // update model
-                model.ViewParameters.HorizontalPosition = this.transform.position.z;
+                model.ViewParameters.HorizontalPosition = this.transform.position.x;
                 model.ViewParameters.VerticalPosition = this.transform.position.y;
+                //Debug.Log(this.transform.position.x.ToString() + ", " + this.transform.position.y.ToString() + ", " + this.transform.position.z.ToString());
             })
             .AddTo(this.Disposables);
 
@@ -638,11 +639,11 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
             {
                 if (this.StrongDamageState.IsActive)
                 {
-                    parameters.HorizontalVelocity = this.DamageMove.Value * (parameters.IsGrounded ? 1f : 0.2f);
+                    parameters.HorizontalVelocity = -this.DamageMove.Value * (parameters.IsGrounded ? 1f : 0.2f);
                 }
                 else if (this.FlyDamageState.IsActive)
                 {
-                    parameters.HorizontalVelocity = this.DamageMove.Value;
+                    parameters.HorizontalVelocity = -this.DamageMove.Value;
                 }
                 else if (this.AnimatorStates.HasTag(damagedTag))
                 {

@@ -25,10 +25,15 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
 
         public int Id { get; set; }
 
+        protected override void OnAwake()
+        {
+            base.OnAwake();
+            this.DamagedSubject = new Subject<AttackInformation>().AddTo(this.Disposables);
+        }
+
         protected override void OnStart()
         {
             base.OnStart();
-            this.DamagedSubject = new Subject<AttackInformation>().AddTo(this.Disposables);
             this.invincibleTime = 0f;
             this.lastAttackId = -1;
         }

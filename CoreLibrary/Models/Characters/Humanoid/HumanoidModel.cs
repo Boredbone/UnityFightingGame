@@ -108,6 +108,21 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
                     this.DesiredParameters.IsGuarding = false;
                     this.DesiredParameters.IsDamaged = true;
                     this.DesiredParameters.DamageType = this.LastDamage.Type;
+
+
+                    // effect
+                    var effect = this.Core.Effect.GenerateRequest();
+
+                    effect.Z = 0;
+                    effect.Y = this.ViewParameters.VerticalPosition;
+                    effect.X = this.ViewParameters.HorizontalPosition;
+
+                    //this.Core.Log($"{effect.X}, {effect.Y}, {effect.Z}");
+
+                    effect.Type = EffectType.Burst;
+                    effect.Commit();
+
+
                 }
                 this.isLastDamaged = false;
                 this.LastDamage.Power = 0f;

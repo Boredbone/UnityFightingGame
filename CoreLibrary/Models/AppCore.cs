@@ -2,18 +2,27 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Boredbone.UnityFightingGame.CoreLibrary.Helpers;
+using UniRx;
 
 namespace Boredbone.UnityFightingGame.CoreLibrary.Models
 {
-    public class AppCore
+    public class AppCore : DisposableBase
     {
         private static AppCore _instance = new AppCore();
 
         public CharacterManager Characters { get; private set; }
 
         private UpdateArgs UpdateArgs { get; set; }
+        //private Subject<UpdateArgs> UpdateSubject { get; }
+        //public IObservable<UpdateArgs> UpdateAsObserbable => this.UpdateSubject.AsObservable();
 
         public KeyInputStatus[] KeyboardInput { get; private set; }
+
+        private Subject<string> DebugLogSubject { get; }
+        public IObservable<string> DebugLog => this.DebugLogSubject.AsObservable();
+
+        public EffectServer Effect { get; }
 
 
         private AppCore()
@@ -21,6 +30,11 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models
             this.Characters = new CharacterManager(this);
 
             this.UpdateArgs = new UpdateArgs();
+            //this.UpdateSubject = new Subject<UpdateArgs>().AddTo(this.Disposables);
+
+            this.DebugLogSubject = new Subject<string>().AddTo(this.Disposables);
+
+            this.Effect = new EffectServer(8).AddTo(this.Disposables);
 
             this.KeyboardInput = Enumerable.Range(0, 2).Select(_ => new KeyInputStatus()).ToArray();
         }
@@ -40,7 +54,10 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models
             this.UpdateArgs.ElapsedTime = elapsedTime;
 
             this.Characters.Update(this.UpdateArgs);
+            this.Effect.Update(this.UpdateArgs);
         }
+
+        internal void Log(string text) => this.DebugLogSubject.OnNext(text);
     }
 
     public class AppEnvironmentArgs
