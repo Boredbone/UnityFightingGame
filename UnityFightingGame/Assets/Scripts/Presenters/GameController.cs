@@ -27,8 +27,10 @@ namespace Boredbone.UnityFightingGame.Presenters
         public Text life0;
         public Text life1;
 
-        public GameObject effectContainer;
-        private ParticleSystem effect;
+        public ParticleManager particleManager;
+
+        //public GameObject effectContainer;
+        //private ParticleSystem effect;
 
 
 
@@ -42,7 +44,7 @@ namespace Boredbone.UnityFightingGame.Presenters
 
             this.InputReceiver = new InputReceiver(this.Core);
 
-            this.effect = this.effectContainer.GetComponent<ParticleSystem>();
+            //this.effect = this.effectContainer.GetComponent<ParticleSystem>();
         }
 
         // Use this for initialization
@@ -57,9 +59,10 @@ namespace Boredbone.UnityFightingGame.Presenters
 
             this.Core.Effect.Requested.Subscribe(r =>
             {
-                Debug.Log(r.X.ToString() + ", " + r.Y.ToString() + ", " + r.Z.ToString());
-                this.effectContainer.transform.position = new Vector3(r.X, r.Y+1, r.Z);
-                effect.Play();
+                this.particleManager.Execute(r);
+                //Debug.Log(r.X.ToString() + ", " + r.Y.ToString() + ", " + r.Z.ToString());
+                //this.effectContainer.transform.position = new Vector3(r.X, r.Y+1, r.Z);
+                //effect.Play();
             })
             .AddTo(this.Disposables);
 

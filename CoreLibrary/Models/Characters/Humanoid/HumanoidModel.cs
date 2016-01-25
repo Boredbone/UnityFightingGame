@@ -14,7 +14,7 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
         public DesiredParameters DesiredParameters { get; }
 
         private Subject<Unit> UpdatedSubject { get; }
-        public IObservable<Unit> Updated => this.UpdatedSubject.AsObservable(); 
+        public IObservable<Unit> Updated => this.UpdatedSubject.AsObservable();
 
         public CharacterType CharacterType => CharacterType.Humanoid;
 
@@ -24,7 +24,7 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
         public bool Mirror => this.Player.Mirror;
 
         public int InitialPosition => this.Player.Team == 0 ? -1 : 1;
-        
+
         public ReactiveProperty<int> Life { get; }
         //private float Life;
         private int LifeMax = 0;
@@ -44,6 +44,7 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
         private AttackInformation LastDamage { get; }
         private int guardingAttack = -1;
 
+        private Random Random { get; }
 
         public HumanoidModel()
         {
@@ -51,6 +52,8 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
             this.DesiredParameters = new DesiredParameters();
 
             this.LastDamage = new AttackInformation();
+
+            this.Random = new Random();
 
             this.UpdatedSubject = new Subject<Unit>().AddTo(this.Disposables);
 
@@ -96,10 +99,31 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
             // Damage
             if (this.isLastDamaged)
             {
+
+                // effect
+                var effect = this.Core.Effect.GenerateRequest();
+
+                var y = this.ViewParameters.VerticalPosition + 0.9f + (this.Random.Next(12) - 6) * 0.05f;
+                var x = this.ViewParameters.HorizontalPosition
+                    + ((this.ViewParameters.HorizontalPosition > this.LastDamage.SourcePositionHorizontal)
+                    ? -1f : 1f) * 0.04f + (this.Random.Next(12) - 6) * 0.05f;
+
+                //var rxx=rx.
+
+
+
+                effect.Z = 0;
+                effect.Y = y;
+                effect.X = x;
+
+                //this.Core.Log($"{effect.X}, {effect.Y}, {effect.Z}");
+
                 if (this.LastDamage.Id == this.guardingAttack)
                 {
                     this.DesiredParameters.IsGuarding = true;
                     this.DesiredParameters.IsDamaged = false;
+
+                    effect.Type = EffectType.Shock;
                 }
                 else
                 {
@@ -110,22 +134,18 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
                     this.DesiredParameters.DamageType = this.LastDamage.Type;
 
 
-                    // effect
-                    var effect = this.Core.Effect.GenerateRequest();
-
-                    effect.Z = 0;
-                    effect.Y = this.ViewParameters.VerticalPosition;
-                    effect.X = this.ViewParameters.HorizontalPosition;
-
-                    //this.Core.Log($"{effect.X}, {effect.Y}, {effect.Z}");
 
                     effect.Type = EffectType.Burst;
-                    effect.Commit();
 
 
                 }
+                effect.Commit();
                 this.isLastDamaged = false;
                 this.LastDamage.Power = 0f;
+                this.DesiredParameters.BackDamage = this.ViewParameters.Direction
+                    * (this.ViewParameters.HorizontalPosition - this.LastDamage.SourcePositionHorizontal) < 0;
+                //AppCore.GetEnvironment(null).Log
+                //    (this.DesiredParameters.BackDamage.ToString());
             }
             else
             {
@@ -195,6 +215,8 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
         public float HorizontalPosition { get; set; }
         public float VerticalPosition { get; set; }
 
+        public float Direction { get; set; }
+
         internal ViewParameters()
         {
 
@@ -218,6 +240,7 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
 
         public bool IsDamaged { get; internal set; }
         public AttackType DamageType { get; internal set; }
+        public bool BackDamage { get; set; }
 
         public bool IsGuarding { get; internal set; }
 

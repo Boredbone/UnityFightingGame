@@ -227,6 +227,9 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
                 parameters.HorizontalVelocity = this.Velocity.z;
                 parameters.VerticalVelocity = this.Velocity.y;
 
+                this.AttackCollider.Information.SourcePositionHorizontal = this.transform.position.x;
+                this.AttackCollider.Information.SourcePositionVertical = this.transform.position.y;
+
                 // Action
                 this.HorizontalMove(parameters);
                 this.Jump(parameters);
@@ -242,6 +245,7 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
                 // update model
                 model.ViewParameters.HorizontalPosition = this.transform.position.x;
                 model.ViewParameters.VerticalPosition = this.transform.position.y;
+                model.ViewParameters.Direction = this.moveDirection;
                 //Debug.Log(this.transform.position.x.ToString() + ", " + this.transform.position.y.ToString() + ", " + this.transform.position.z.ToString());
             })
             .AddTo(this.Disposables);
@@ -586,7 +590,7 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
         }
 
         /// <summary>
-        /// attack
+        /// attack, damage
         /// </summary>
         /// <param name="parameters"></param>
         private void AttackOrDamage(TemporaryParameters parameters)
@@ -639,11 +643,14 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
             {
                 if (this.StrongDamageState.IsActive)
                 {
-                    parameters.HorizontalVelocity = -this.DamageMove.Value * (parameters.IsGrounded ? 1f : 0.2f);
+                    parameters.HorizontalVelocity = (parameters.Desired.BackDamage ? 1f : -1f)
+                        * this.DamageMove.Value * (parameters.IsGrounded ? 1f : 0.2f);
+                    //Debug.Log(parameters.HorizontalVelocity.ToString());
                 }
                 else if (this.FlyDamageState.IsActive)
                 {
-                    parameters.HorizontalVelocity = -this.DamageMove.Value;
+                    parameters.HorizontalVelocity = (parameters.Desired.BackDamage ? 1f : -1f)
+                        * this.DamageMove.Value;
                 }
                 else if (this.AnimatorStates.HasTag(damagedTag))
                 {

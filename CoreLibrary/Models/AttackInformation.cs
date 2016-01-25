@@ -12,6 +12,9 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models
         public float StayingTime { get; set; }
         public int Id { get; private set; }
 
+        public float SourcePositionHorizontal { get; set; }
+        public float SourcePositionVertical { get; set; }
+
         public AttackType Type { get; set; }
 
         private static int number = 0;
@@ -33,6 +36,8 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models
             this.Id = other.Id;
             this.Type = other.Type;
 
+            this.SourcePositionHorizontal = other.SourcePositionHorizontal;
+            this.SourcePositionVertical = other.SourcePositionVertical;
         }
     }
 
