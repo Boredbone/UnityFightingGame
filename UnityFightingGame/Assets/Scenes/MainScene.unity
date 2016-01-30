@@ -248,6 +248,7 @@ Transform:
   - {fileID: 1263992395}
   - {fileID: 1480870429}
   - {fileID: 1077095424}
+  - {fileID: 233178339}
   m_Father: {fileID: 0}
   m_RootOrder: 8
 --- !u!114 &215332007
@@ -262,7 +263,66 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   burst: {fileID: 457889843}
+  burstSmall: {fileID: 233178339}
   shock: {fileID: 1077095424}
+--- !u!1001 &233178338
+Prefab:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 215332006}
+    m_Modifications:
+    - target: {fileID: 412746, guid: d1348414ad58dc8439a13803268ee55a, type: 2}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 412746, guid: d1348414ad58dc8439a13803268ee55a, type: 2}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 412746, guid: d1348414ad58dc8439a13803268ee55a, type: 2}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 412746, guid: d1348414ad58dc8439a13803268ee55a, type: 2}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 412746, guid: d1348414ad58dc8439a13803268ee55a, type: 2}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 412746, guid: d1348414ad58dc8439a13803268ee55a, type: 2}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 412746, guid: d1348414ad58dc8439a13803268ee55a, type: 2}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 412746, guid: d1348414ad58dc8439a13803268ee55a, type: 2}
+      propertyPath: m_RootOrder
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 19854162, guid: d1348414ad58dc8439a13803268ee55a, type: 2}
+      propertyPath: InitialModule.startSize.scalar
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 19854162, guid: d1348414ad58dc8439a13803268ee55a, type: 2}
+      propertyPath: InitialModule.startLifetime.scalar
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 19854162, guid: d1348414ad58dc8439a13803268ee55a, type: 2}
+      propertyPath: InitialModule.startSpeed.scalar
+      value: 0.5
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_ParentPrefab: {fileID: 100100000, guid: d1348414ad58dc8439a13803268ee55a, type: 2}
+  m_IsPrefabParent: 0
+--- !u!4 &233178339 stripped
+Transform:
+  m_PrefabParentObject: {fileID: 412746, guid: d1348414ad58dc8439a13803268ee55a, type: 2}
+  m_PrefabInternal: {fileID: 233178338}
 --- !u!1 &253705662
 GameObject:
   m_ObjectHideFlags: 0
@@ -775,11 +835,11 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 19854162, guid: 916af101ada90144ca0f413f689c4edc, type: 2}
       propertyPath: InitialModule.startSize.scalar
-      value: 0.2
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: 19854162, guid: 916af101ada90144ca0f413f689c4edc, type: 2}
       propertyPath: InitialModule.startSpeed.scalar
-      value: 1.5
+      value: 1.1
       objectReference: {fileID: 0}
     - target: {fileID: 19854162, guid: 916af101ada90144ca0f413f689c4edc, type: 2}
       propertyPath: InitialModule.startLifetime.scalar
@@ -792,6 +852,14 @@ Prefab:
     - target: {fileID: 19854162, guid: 916af101ada90144ca0f413f689c4edc, type: 2}
       propertyPath: lengthInSec
       value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 19854162, guid: 916af101ada90144ca0f413f689c4edc, type: 2}
+      propertyPath: ShapeModule.radius
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 19854162, guid: 916af101ada90144ca0f413f689c4edc, type: 2}
+      propertyPath: ShapeModule.type
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: 916af101ada90144ca0f413f689c4edc, type: 2}
@@ -1261,7 +1329,7 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 19816444, guid: c40f2a15d1fba5a4480c9b493a3fa0c8, type: 2}
       propertyPath: InitialModule.startSize.scalar
-      value: 0.5
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 19816444, guid: c40f2a15d1fba5a4480c9b493a3fa0c8, type: 2}
       propertyPath: InitialModule.startLifetime.scalar

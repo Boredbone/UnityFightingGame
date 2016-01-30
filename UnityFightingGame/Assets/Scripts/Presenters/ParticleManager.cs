@@ -14,6 +14,7 @@ namespace Boredbone.UnityFightingGame.Presenters
     {
 
         public Transform burst;
+        public Transform burstSmall;
         public Transform shock;
 
         private HashSet<EffectObject> Pool { get; set; }
@@ -23,12 +24,11 @@ namespace Boredbone.UnityFightingGame.Presenters
             base.OnAwake();
 
             this.Pool = new HashSet<EffectObject>();
-
-            var sh = new EffectObject(this.shock, EffectType.Shock);
-            //sh.Particle.playbackSpeed = 5;
+            
 
             this.Pool.Add(new EffectObject(this.burst, EffectType.Burst));
-            this.Pool.Add(sh);
+            this.Pool.Add(new EffectObject(this.burstSmall, EffectType.BurstSmall));
+            this.Pool.Add(new EffectObject(this.shock, EffectType.Shock));
 
         }
 
@@ -39,7 +39,7 @@ namespace Boredbone.UnityFightingGame.Presenters
             var obj = this.Pool.Where(y => y.Type == request.Type).FirstOrDefault(y => !y.Particle.IsAlive());
             //||y.Particle.time>y.Particle.startLifetime);
 
-            Debug.Log(((obj == null) ? "no idle effect" : "use pool") + ", " + this.Pool.Count);
+            //Debug.Log(((obj == null) ? "no idle effect" : "use pool") + ", " + this.Pool.Count);
 
             if (obj == null)
             {
@@ -48,6 +48,9 @@ namespace Boredbone.UnityFightingGame.Presenters
                 {
                     case EffectType.Burst:
                         tr = Instantiate(this.burst);
+                        break;
+                    case EffectType.BurstSmall:
+                        tr = Instantiate(this.burstSmall);
                         break;
                     case EffectType.Flash:
                         tr = Instantiate(this.burst);
@@ -58,11 +61,7 @@ namespace Boredbone.UnityFightingGame.Presenters
                 }
 
                 obj = new EffectObject(tr, request.Type);
-
-                if(obj.Type== EffectType.Shock)
-                {
-                    //obj.Particle.playbackSpeed = 5;
-                }
+                
 
                 this.Pool.Add(obj);
             }

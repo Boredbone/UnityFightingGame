@@ -38,6 +38,8 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
         private AnimationTrigger FlyDamageTrigger { get; set; }
         private AnimationTrigger StunDamageTrigger { get; set; }
 
+
+
         private AnimatorState IdleState { get; set; }
         private AnimatorState LocoState { get; set; }
         private AnimatorState JumpState { get; set; }
@@ -46,8 +48,10 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
         private AnimatorState Lan2State { get; set; }
         private AnimatorState RestState { get; set; }
 
+        private AnimatorState WeakDamageState { get; set; }
         private AnimatorState StrongDamageState { get; set; }
         private AnimatorState FlyDamageState { get; set; }
+        
 
         //private AnimatorState AirAttack1State { get; set; }
         //private AnimatorState AirAttack2_0State { get; set; }
@@ -70,11 +74,13 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
         private ReadOnlyAnimatorValueFloat AttackEnabled { get; set; }
         private ReadOnlyAnimatorValueFloat DamageMove { get; set; }
         private ReadOnlyAnimatorValueFloat JumpStability { get; set; }
+        private ReadOnlyAnimatorValueFloat Invincible { get; set; }
 
         private AnimatorValueBool OnGrond { get; set; }
         private AnimatorValueBool Attack1 { get; set; }
         private AnimatorValueBool Attack2_0 { get; set; }
         private AnimatorValueBool Attack2 { get; set; }
+        private AnimatorValueBool Attack2Finish { get; set; }
 
 
         private bool _fieldJumpRequest = false;
@@ -110,6 +116,9 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
         private const string punch2AttackTag = "Punch2Attack";
         private const string kickAttackTag = "KickAttack";
 
+        private const string finishPunchAttackTag = "FinishPunchAttack";
+
+        private bool finishPunchFlag;
 
         private int previousAttackState;
 
@@ -118,6 +127,10 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
         //private HumanoidModel Model { get; set; }
 
         private AttackColliderController AttackCollider { get; set; }
+        private VitalController VitalBody { get; set; }
+
+        private bool isRushHit;
+        private int rushHitCount;
 
         /// <summary>
         /// Use this for initialization
@@ -161,6 +174,13 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
                 //Debug.Log(y.Id.ToString());
             }).AddTo(this.Disposables);
 
+            this.AttackCollider.Hit
+                .Subscribe(y =>
+                {
+                    this.isRushHit = true;
+                })
+                .AddTo(this.Disposables);
+
 
 
             var vital = this.transform.AsEnumerable()
@@ -171,6 +191,7 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
                 model.OnDamaged(y);
                 //Debug.Log(y.Id.ToString());
             }).AddTo(this.Disposables);
+            this.VitalBody = vital;
 
             this.previousAttackState = 0;
 
@@ -200,6 +221,10 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
             this.JumpRequest = false;
             this.isSecondJumpDone = false;
             this.isInAttack = false;
+
+            this.isRushHit = false;
+            this.rushHitCount = 0;
+            this.finishPunchFlag = false;
 
 
             var pos = this.transform.position;
@@ -276,11 +301,13 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
             this.AttackEnabled = new ReadOnlyAnimatorValueFloat("AttackEnabled", this.Animator);
             this.DamageMove = new ReadOnlyAnimatorValueFloat("DamageMove", this.Animator);
             this.JumpStability = new ReadOnlyAnimatorValueFloat("JumpStability", this.Animator);
+            this.Invincible = new ReadOnlyAnimatorValueFloat("Invincible", this.Animator);
 
             this.OnGrond = new AnimatorValueBool("OnGround", this.Animator);
             this.Attack1 = new AnimatorValueBool("Attack1", this.Animator);
             this.Attack2_0 = new AnimatorValueBool("Attack2_0", this.Animator);
             this.Attack2 = new AnimatorValueBool("Attack2", this.Animator);
+            this.Attack2Finish = new AnimatorValueBool("Attack2_finish", this.Animator);
 
 
             this.AnimatorStates = new AnimatorStateManager().AddTo(this.Disposables);
@@ -303,9 +330,10 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
             var landAttack2_0State = new AnimatorState("Base Layer.LandAtk2_0", this.AnimatorStates);
             var landAttack2_1State = new AnimatorState("Base Layer.LandAtk2_1", this.AnimatorStates);
             var landAttack2_2State = new AnimatorState("Base Layer.LandAtk2_2", this.AnimatorStates);
+            var landAttack2FinishState = new AnimatorState("Base Layer.LandAtk2_finish", this.AnimatorStates);
 
 
-            var weakDamageState = new AnimatorState("Base Layer.WeakDamage", this.AnimatorStates);
+            this.WeakDamageState = new AnimatorState("Base Layer.WeakDamage", this.AnimatorStates);
             this.StrongDamageState = new AnimatorState("Base Layer.StrongDamage", this.AnimatorStates);
             this.FlyDamageState = new AnimatorState("Base Layer.FlyDamage", this.AnimatorStates);
             var stunDamageState = new AnimatorState("Base Layer.StunDamage", this.AnimatorStates);
@@ -341,6 +369,7 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
                 landAttack2_0State,
                 landAttack2_1State,
                 landAttack2_2State,
+                landAttack2FinishState,
             }
             .ForEach(y =>
             {
@@ -362,7 +391,7 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
 
             new[]
             {
-                weakDamageState,
+                this.WeakDamageState,
                 this.StrongDamageState,
                 this.FlyDamageState,
                 stunDamageState,
@@ -398,8 +427,15 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
                 landAttack2_0State,
                 landAttack2_1State,
                 //landAttack2_2State,
+                landAttack2FinishState,
             }
             .ForEach(y => y.Tags.Add(punchAttackTag));
+
+            new[]
+            {
+                landAttack2FinishState,
+            }
+            .ForEach(y => y.Tags.Add(finishPunchAttackTag));
 
             new[]
             {
@@ -579,14 +615,16 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
         /// Avtivate attack collider
         /// </summary>
         /// <param name="key"></param>
-        private void StartAttack(string key)
+        private bool StartAttack(string key)
         {
             if (this.AnimatorStates.IsNotInTransition
                 && this.previousAttackState != this.AnimatorStates.CurrentState)
             {
                 this.AttackCollider.ActivateCollider(key);
                 this.previousAttackState = this.AnimatorStates.CurrentState;
+                return true;
             }
+            return false;
         }
 
         /// <summary>
@@ -604,6 +642,13 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
                 this.isInAttack = false;
                 this.AttackCollider.ClearCollider();
 
+
+                this.Attack2.Value = false;
+                this.Attack2Finish.Value = false;
+                this.isRushHit = false;
+                this.rushHitCount = 0;
+                this.finishPunchFlag = false;
+
                 if (this.AnimatorStates.HasTag(damagedTag))
                 {
                     this.Attack1.Value = false;
@@ -612,9 +657,26 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
                     //this.Animator.SetBool("Attack1", false);
                     //this.Animator.SetBool("Attack2", false);
                     //this.Animator.SetBool("Attack2_0", false);
+                    this.finishPunchFlag = false;
+                    this.Attack2Finish.Value = false;
                 }
 
             }
+
+            if(this.finishPunchFlag
+                && this.AnimatorStates.IsNotInTransition
+                && this.AnimatorStates.HasTag(finishPunchAttackTag))
+            {
+                this.AttackCollider.Information.Power = 2;
+                //this.AttackCollider.Information.StayingTime = 1f;
+                this.AttackCollider.Information.Type = AttackType.Fly;
+                this.AttackCollider.Information.Effect = EffectType.Burst;
+
+                this.Attack2Finish.Value = false;
+                this.finishPunchFlag = false;
+            }
+
+            this.VitalBody.IsEnabled = this.Invincible.Value < 0.6;
 
             var attackEnabled = this.AttackEnabled.Value > 0.5f;// this.Animator.GetFloat("AttackEnabled") > 0.5f;
 
@@ -626,8 +688,21 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
             }
             else if (attackEnabled && this.AnimatorStates.HasTag(punch2AttackTag))
             {
-                this.StartAttack("Punch2");
-                //Debug.Log("p2");
+                var attackStarted = this.StartAttack("Punch2");
+                if (attackStarted)
+                {
+                    if (this.isRushHit)
+                    {
+                        this.rushHitCount++;
+                    }
+                    else {
+                        this.rushHitCount = 0;
+                    }
+
+                    this.isRushHit = false;
+                    
+                    Debug.Log(this.rushHitCount.ToString());
+                }
             }
             else if (attackEnabled && this.AnimatorStates.HasTag(kickAttackTag))
             {
@@ -639,7 +714,7 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
                 this.previousAttackState = 0;
             }
 
-            if (this.AnimatorStates.IsNotInTransition)
+            //if (this.AnimatorStates.IsNotInTransition)
             {
                 if (this.StrongDamageState.IsActive)
                 {
@@ -647,10 +722,15 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
                         * this.DamageMove.Value * (parameters.IsGrounded ? 1f : 0.2f);
                     //Debug.Log(parameters.HorizontalVelocity.ToString());
                 }
+                else if (this.WeakDamageState.IsActive)
+                {
+                    parameters.HorizontalVelocity = (parameters.Desired.BackDamage ? 1f : -1f)
+                        * this.DamageMove.Value * (parameters.IsGrounded ? 0.1f : 0.02f);
+                }
                 else if (this.FlyDamageState.IsActive)
                 {
                     parameters.HorizontalVelocity = (parameters.Desired.BackDamage ? 1f : -1f)
-                        * this.DamageMove.Value;
+                        * this.DamageMove.Value * 5.0f;
                 }
                 else if (this.AnimatorStates.HasTag(damagedTag))
                 {
@@ -675,9 +755,10 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
                     //case AttackType.Stun:
                     //    this.StunDamageTrigger.Set();
                     //    break;
-                    //case AttackType.Fly:
-                    //    this.FlyDamageTrigger.Set();
-                    //    break;
+                    case AttackType.Fly:
+                        parameters.VerticalVelocity += 3f;
+                        this.FlyDamageTrigger.Set();
+                        break;
                     default:
                         this.WeakDamageTrigger.Set();
                         break;
@@ -702,6 +783,7 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
                         parameters.VerticalVelocity += jumpSpeed * 0.2f;
                         this.AttackCollider.Information.Power = 3;
                         this.AttackCollider.Information.Type = AttackType.Strong;
+                        this.AttackCollider.Information.Effect = EffectType.Burst;
                     }
                     else if (parameters.Desired.Punch)
                     {
@@ -710,6 +792,10 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
                         //this.Animator.SetBool("Attack2_0", true);
                         this.AttackCollider.Information.Power = 2;
                         this.AttackCollider.Information.Type = AttackType.Weak;
+                        this.AttackCollider.Information.Effect = EffectType.Burst;
+
+                        this.isRushHit = false;
+                        this.rushHitCount = 0;
                     }
                     else if (parameters.Desired.RushPunch)
                     {
@@ -717,6 +803,10 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
                         attack2Flag = true;
                         this.AttackCollider.Information.Power = 1;
                         this.AttackCollider.Information.Type = AttackType.Weak;
+                        this.AttackCollider.Information.Effect = EffectType.BurstSmall;
+
+                        this.isRushHit = false;
+                        this.rushHitCount = 0;
                     }
                     else if ((this.IdleState.IsActive || this.RestState.IsActive) && parameters.Desired.Rest)
                     {
@@ -729,12 +819,30 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
                     if (parameters.Desired.RushPunch)
                     {
                         attack2Flag = true;
-                        this.Attack2_0.Value = true;
+                        this.Attack2_0.Value = false;
                         //this.Animator.SetBool("Attack2_0", false);
                         this.AttackCollider.Information.Power = 1;
                         this.AttackCollider.Information.Type = AttackType.Weak;
+                        this.AttackCollider.Information.Effect = EffectType.BurstSmall;
                     }
                 }
+            }
+
+            if (!attack2Flag && this.rushHitCount >= 10 && this.Attack2.Value)
+            {
+                attack2Flag = true;
+                //this.Attack2.Value = true;
+                this.Attack2Finish.Value = true;
+
+                this.isRushHit = false;
+                this.rushHitCount = 0;
+
+                this.finishPunchFlag = true;
+
+                //this.AttackCollider.Information.Power = 2;
+                ////this.AttackCollider.Information.StayingTime = 1f;
+                //this.AttackCollider.Information.Type = AttackType.Fly;
+                //this.AttackCollider.Information.Effect = EffectType.Burst;
             }
 
 

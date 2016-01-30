@@ -135,7 +135,7 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
 
 
 
-                    effect.Type = EffectType.Burst;
+                    effect.Type = this.LastDamage.Effect;// EffectType.Burst;
 
 
                 }
@@ -241,6 +241,7 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models.Characters.Humanoid
         public bool IsDamaged { get; internal set; }
         public AttackType DamageType { get; internal set; }
         public bool BackDamage { get; set; }
+
 
         public bool IsGuarding { get; internal set; }
 

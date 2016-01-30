@@ -18,6 +18,8 @@ namespace Boredbone.UnityFightingGame.Presenters.Characters.Humanoid
 
 
         private Subject<Collider> HitSubject { get; set; }
+        public IObservable<Collider> Hit { get { return this.HitSubject.AsObservable(); } }
+
 
         private Subject<AttackInformation> GuardingSubject { get; set; }
         public IObservable<AttackInformation> Guarding { get { return this.GuardingSubject.AsObservable(); } }

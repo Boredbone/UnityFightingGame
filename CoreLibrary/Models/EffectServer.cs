@@ -80,6 +80,7 @@ namespace Boredbone.UnityFightingGame.CoreLibrary.Models
     {
         Shock,
         Burst,
+        BurstSmall,
         Flash,
     }
 
